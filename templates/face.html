@@ -26,10 +26,10 @@
         body {
             margin: 0;
             height: 100vh;
-            background-color: #fdf6e3;
-            /* Solarized Light / Pastel Cream base */
-            color: #586e75;
-            /* Soft text */
+            background-color: #2e3440;
+            /* Nord Polar Night (Dark Pastel Grey/Blue) */
+            color: #d8dee9;
+            /* Nord Snow Storm (Soft White) */
             font-family: 'Outfit', sans-serif;
             display: grid;
             grid-template-columns: 70% 30%;
@@ -43,10 +43,9 @@
         /* --- ZONE 1: TERMINAL (Left) --- */
         #terminal-container {
             grid-area: terminal;
-            background-color: #fdf6e3;
-            /* Match body for seamless minimal look */
+            background-color: #2e3440;
+            /* Seamless match */
             padding: 25px;
-            /* No borders */
             position: relative;
             overflow: hidden;
             height: 100vh;
@@ -67,7 +66,7 @@
             min-height: 300px;
         }
 
-        /* ORB STYLES - PASTEL EDITION */
+        /* ORB STYLES - DARK BLUE PASTEL EDITION */
         .orb-container {
             width: 200px;
             height: 200px;
@@ -81,49 +80,45 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            /* Pastel Gradient: Soft Purple to Soft Blue */
-            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-            box-shadow: 0 10px 30px rgba(142, 197, 252, 0.4);
+            /* Nord Frost Gradient */
+            background: linear-gradient(135deg, #8fbcbb 0%, #88c0d0 100%);
+            box-shadow: 0 0 30px rgba(136, 192, 208, 0.3);
             position: relative;
             z-index: 10;
             transition: all 0.5s ease;
-            animation: floaty 6s ease-in-out infinite;
+            animation: breathe 5s ease-in-out infinite;
         }
 
-        .ring {
-            display: none;
-            /* Removing rings for true minimalism */
-        }
-
-        /* STATES - Minimal changes */
+        /* STATES */
         body.listening .orb {
             transform: scale(1.2);
-            box-shadow: 0 10px 50px rgba(142, 197, 252, 0.6);
+            /* Frost Blue Glow */
+            box-shadow: 0 0 60px rgba(136, 192, 208, 0.5);
+            background: linear-gradient(135deg, #88c0d0 0%, #81a1c1 100%);
         }
 
         body.speaking .orb {
-            /* Pastel Green/Mint */
-            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
-            box-shadow: 0 10px 40px rgba(150, 230, 161, 0.5);
+            /* Aurora Green (Pastel) */
+            background: linear-gradient(135deg, #a3be8c 0%, #8fbcbb 100%);
+            box-shadow: 0 0 40px rgba(163, 190, 140, 0.4);
             animation: pulse-soft 2s infinite;
         }
 
         body.thinking .orb {
-            /* Pastel Pink/Orange */
-            background: linear-gradient(135deg, #ffd1ff 0%, #fad0c4 100%);
-            box-shadow: 0 10px 40px rgba(250, 208, 196, 0.5);
+            /* Aurora Purple (Pastel) */
+            background: linear-gradient(135deg, #b48ead 0%, #81a1c1 100%);
+            box-shadow: 0 0 40px rgba(180, 142, 173, 0.4);
             animation: spin 3s linear infinite;
         }
 
         #avatar-status {
             margin-top: 30px;
             font-family: 'Outfit', sans-serif;
-            /* Cleaner font than mono */
             font-weight: 500;
             font-size: 0.9rem;
-            letter-spacing: 1px;
-            color: #93a1a1;
-            /* Pastel Grey */
+            letter-spacing: 1.5px;
+            color: #81a1c1;
+            /* Nord Blue (Muted) */
             text-transform: uppercase;
             text-align: center;
         }
@@ -151,27 +146,26 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #93a1a1;
+            color: #d8dee9;
+            /* Off-white */
+            opacity: 0.6;
         }
 
         .metric i {
-            color: #268bd2;
-            /* Solarized Blue */
-            opacity: 0.7;
+            color: #88c0d0;
+            /* Frost Blue */
         }
 
         /* ANIMATIONS */
-        @keyframes floaty {
-            0% {
-                transform: translateY(0px);
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
             }
 
             50% {
-                transform: translateY(-10px);
-            }
-
-            100% {
-                transform: translateY(0px);
+                transform: scale(1.05);
             }
         }
 
@@ -207,7 +201,7 @@
         <div class="orb-container">
             <div class="orb" id="neo-orb"></div>
         </div>
-        <div id="avatar-status">Active</div>
+        <div id="avatar-status">Online</div>
     </div>
 
     <!-- ZONE 3: STATUS BAR -->
@@ -225,7 +219,7 @@
 
         <div class="metric-row" style="justify-content: center; margin-top: 20px;">
             <div class="metric">
-                <span id="clock" style="font-size: 1.4em; font-weight: 300; color: #586e75;">12:00</span>
+                <span id="clock" style="font-size: 1.4em; font-weight: 300; color: #eceff4;">12:00</span>
             </div>
         </div>
     </footer>
@@ -238,26 +232,26 @@
         // --- XTERM SETUP ---
         const term = new Terminal({
             theme: {
-                background: '#fdf6e3', // Solarized Light Base
-                foreground: '#657b83', // Solarized Content
-                cursor: '#586e75',
-                selection: 'rgba(38, 139, 210, 0.3)',
-                black: '#073642',
-                red: '#dc322f',
-                green: '#859900',
-                yellow: '#b58900',
-                blue: '#268bd2',
-                magenta: '#d33682',
-                cyan: '#2aa198',
-                white: '#eee8d5',
-                brightBlack: '#002b36',
-                brightRed: '#cb4b16',
-                brightGreen: '#586e75',
-                brightYellow: '#657b83',
-                brightBlue: '#839496',
-                brightMagenta: '#6c71c4',
-                brightCyan: '#93a1a1',
-                brightWhite: '#fdf6e3'
+                background: '#2e3440', // Nord Polar Night
+                foreground: '#d8dee9', // Nord Snow Storm
+                cursor: '#d8dee9',
+                selection: 'rgba(136, 192, 208, 0.3)',
+                black: '#3b4252',
+                red: '#bf616a',
+                green: '#a3be8c',
+                yellow: '#ebcb8b',
+                blue: '#81a1c1',
+                magenta: '#b48ead',
+                cyan: '#88c0d0',
+                white: '#e5e9f0',
+                brightBlack: '#4c566a',
+                brightRed: '#bf616a',
+                brightGreen: '#a3be8c',
+                brightYellow: '#ebcb8b',
+                brightBlue: '#81a1c1',
+                brightMagenta: '#b48ead',
+                brightCyan: '#8fbcbb',
+                brightWhite: '#eceff4'
             },
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: 13,
@@ -276,14 +270,14 @@
 
         window.addEventListener('resize', () => fitAddon.fit());
 
-        // Custom Welcome Message (Clean)
-        term.writeln('\x1b[34m• system_ready\x1b[0m');
-        term.writeln('\x1b[30;1mWaiting for input...\x1b[0m');
+        // Custom Welcome Message (Nord Style)
+        term.writeln('\x1b[36m• system_ready\x1b[0m'); // Cyan dot
+        term.writeln('\x1b[90mWaiting for voice input...\x1b[0m'); // Grey text
 
         // --- SOCKET EVENTS ---
         socket.on('connect', () => {
             term.writeln('\x1b[32m• core_connected\x1b[0m');
-            statusText.innerText = "Listening";
+            statusText.innerText = "Online";
             body.className = "idle";
         });
 
@@ -295,7 +289,7 @@
         // 1. LOGS in Terminal
         socket.on('log_message', (data) => {
             let msg = data.msg;
-            // Clean/Pastel Formatting
+            // Clean Formatting
             if (msg.includes('INFO')) msg = `\x1b[32m•\x1b[0m ${msg.replace('INFO', '').trim()}`;
             else if (msg.includes('WARNING')) msg = `\x1b[33m•\x1b[0m ${msg.replace('WARNING', '').trim()}`;
             else if (msg.includes('ERROR')) msg = `\x1b[31m•\x1b[0m ${msg.replace('ERROR', '').trim()}`;
