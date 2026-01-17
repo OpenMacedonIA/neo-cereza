@@ -22,26 +22,14 @@
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js"></script>
 
     <style>
-        :root {
-            --bg: #050509;
-            --terminal-bg: #0a0a10;
-            --panel-bg: rgba(20, 20, 30, 0.6);
-            --accent: #00f2ff;
-            --text: #e0e0e0;
-            --border: rgba(0, 242, 255, 0.1);
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
         /* BACKGROUND & LAYOUT */
         body {
             margin: 0;
             height: 100vh;
-            background-color: #000;
-            /* Deepest black for OLED/Minimalism */
-            color: var(--text);
+            background-color: #fdf6e3;
+            /* Solarized Light / Pastel Cream base */
+            color: #586e75;
+            /* Soft text */
             font-family: 'Outfit', sans-serif;
             display: grid;
             grid-template-columns: 70% 30%;
@@ -55,11 +43,10 @@
         /* --- ZONE 1: TERMINAL (Left) --- */
         #terminal-container {
             grid-area: terminal;
-            background-color: #000;
-            /* Seamless match */
-            padding: 20px;
-            /* More breathing room */
-            /* Removed border-right for cleaner look */
+            background-color: #fdf6e3;
+            /* Match body for seamless minimal look */
+            padding: 25px;
+            /* No borders */
             position: relative;
             overflow: hidden;
             height: 100vh;
@@ -76,12 +63,11 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            /* Removed radial gradient background for minimalism */
             position: relative;
             min-height: 300px;
         }
 
-        /* ORB STYLES (Kept as is, they are the main visual) */
+        /* ORB STYLES - PASTEL EDITION */
         .orb-container {
             width: 200px;
             height: 200px;
@@ -95,82 +81,64 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
-            box-shadow: 0 0 40px var(--accent), inset 0 0 20px rgba(255, 255, 255, 0.5);
+            /* Pastel Gradient: Soft Purple to Soft Blue */
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            box-shadow: 0 10px 30px rgba(142, 197, 252, 0.4);
             position: relative;
             z-index: 10;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            animation: breathe 4s ease-in-out infinite;
+            transition: all 0.5s ease;
+            animation: floaty 6s ease-in-out infinite;
         }
 
         .ring {
-            position: absolute;
-            border-radius: 50%;
-            border: 1px solid rgba(0, 242, 255, 0.2);
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.05);
-            pointer-events: none;
+            display: none;
+            /* Removing rings for true minimalism */
         }
 
-        .ring.r1 {
-            width: 140px;
-            height: 140px;
-            border-top-color: var(--accent);
-            animation: spin 8s linear infinite;
-        }
-
-        .ring.r2 {
-            width: 180px;
-            height: 180px;
-            border-bottom-color: var(--accent);
-            animation: spin-rev 12s linear infinite;
-        }
-
-        /* STATES */
+        /* STATES - Minimal changes */
         body.listening .orb {
-            transform: scale(1.3);
-            box-shadow: 0 0 80px var(--accent);
-            animation: pulse-fast 1s infinite;
+            transform: scale(1.2);
+            box-shadow: 0 10px 50px rgba(142, 197, 252, 0.6);
         }
 
         body.speaking .orb {
-            animation: vibrate 0.2s linear infinite;
-            background: radial-gradient(circle, #00ff41, #005010);
-            box-shadow: 0 0 50px #00ff41;
+            /* Pastel Green/Mint */
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            box-shadow: 0 10px 40px rgba(150, 230, 161, 0.5);
+            animation: pulse-soft 2s infinite;
         }
 
         body.thinking .orb {
-            border-radius: 40%;
-            background: radial-gradient(circle, #aa00ff, #3a0050);
-            box-shadow: 0 0 60px #aa00ff;
-            animation: spin 1s linear infinite;
+            /* Pastel Pink/Orange */
+            background: linear-gradient(135deg, #ffd1ff 0%, #fad0c4 100%);
+            box-shadow: 0 10px 40px rgba(250, 208, 196, 0.5);
+            animation: spin 3s linear infinite;
         }
 
         #avatar-status {
-            margin-top: 20px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.0rem;
-            /* Slightly smaller */
-            letter-spacing: 2px;
-            color: rgba(255, 255, 255, 0.5);
-            /* Dimmer */
+            margin-top: 30px;
+            font-family: 'Outfit', sans-serif;
+            /* Cleaner font than mono */
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            color: #93a1a1;
+            /* Pastel Grey */
+            text-transform: uppercase;
             text-align: center;
         }
 
         /* --- ZONE 3: STATUS (Right Bottom) --- */
         #status-bar {
             grid-area: status;
-            /* Transparent background */
-            /* Removed border-top */
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 30px;
             gap: 15px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.8rem;
-            /* Smaller, cleaner */
             justify-content: flex-end;
-            /* Push to bottom */
-            padding-bottom: 40px;
+            padding-bottom: 50px;
         }
 
         .metric-row {
@@ -183,77 +151,47 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: rgba(255, 255, 255, 0.4);
+            color: #93a1a1;
         }
 
         .metric i {
-            color: var(--accent);
-            opacity: 0.8;
+            color: #268bd2;
+            /* Solarized Blue */
+            opacity: 0.7;
         }
 
-        /* INPUT REMOVED - Visual Only */
-
         /* ANIMATIONS */
-        @keyframes breathe {
+        @keyframes floaty {
+            0% {
+                transform: translateY(0px);
+            }
 
-            0%,
+            50% {
+                transform: translateY(-10px);
+            }
+
             100% {
+                transform: translateY(0px);
+            }
+        }
+
+        @keyframes pulse-soft {
+            0% {
                 transform: scale(1);
             }
 
             50% {
-                transform: scale(1.05);
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
             }
         }
 
         @keyframes spin {
             100% {
                 transform: rotate(360deg);
-            }
-        }
-
-        @keyframes spin-rev {
-            100% {
-                transform: rotate(-360deg);
-            }
-        }
-
-        @keyframes pulse-fast {
-            0% {
-                transform: scale(1.3);
-                opacity: 0.8;
-            }
-
-            50% {
-                transform: scale(1.4);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scale(1.3);
-                opacity: 0.8;
-            }
-        }
-
-        @keyframes vibrate {
-            0% {
-                transform: translate(0, 0);
-            }
-
-            25% {
-                transform: translate(-2px, 2px);
-            }
-
-            50% {
-                transform: translate(0, 0);
-            }
-
-            75% {
-                transform: translate(2px, -2px);
-            }
-
-            100% {
-                transform: translate(0, 0);
             }
         }
     </style>
@@ -267,11 +205,9 @@
     <!-- ZONE 2: AVATAR -->
     <div id="avatar-panel">
         <div class="orb-container">
-            <div class="ring r1"></div>
-            <div class="ring r2"></div>
             <div class="orb" id="neo-orb"></div>
         </div>
-        <div id="avatar-status">ONLINE</div>
+        <div id="avatar-status">Active</div>
     </div>
 
     <!-- ZONE 3: STATUS BAR -->
@@ -287,9 +223,9 @@
             </div>
         </div>
 
-        <div class="metric-row" style="justify-content: center; margin-top: 10px;">
+        <div class="metric-row" style="justify-content: center; margin-top: 20px;">
             <div class="metric">
-                <span id="clock" style="font-size: 1.1em; color: rgba(255,255,255,0.7);">12:00</span>
+                <span id="clock" style="font-size: 1.4em; font-weight: 300; color: #586e75;">12:00</span>
             </div>
         </div>
     </footer>
@@ -302,15 +238,32 @@
         // --- XTERM SETUP ---
         const term = new Terminal({
             theme: {
-                background: '#000000', // True Black
-                foreground: '#cccccc', // Slightly dimmed text
-                cursor: '#00f2ff',
-                selection: 'rgba(0, 242, 255, 0.3)'
+                background: '#fdf6e3', // Solarized Light Base
+                foreground: '#657b83', // Solarized Content
+                cursor: '#586e75',
+                selection: 'rgba(38, 139, 210, 0.3)',
+                black: '#073642',
+                red: '#dc322f',
+                green: '#859900',
+                yellow: '#b58900',
+                blue: '#268bd2',
+                magenta: '#d33682',
+                cyan: '#2aa198',
+                white: '#eee8d5',
+                brightBlack: '#002b36',
+                brightRed: '#cb4b16',
+                brightGreen: '#586e75',
+                brightYellow: '#657b83',
+                brightBlue: '#839496',
+                brightMagenta: '#6c71c4',
+                brightCyan: '#93a1a1',
+                brightWhite: '#fdf6e3'
             },
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: 13, // Slightly smaller for dense logs
-            cursorBlink: false, // Visual only
-            disableStdin: true, // Read-only
+            fontSize: 13,
+            fontWeight: 400,
+            cursorBlink: false,
+            disableStdin: true,
             convertEol: true
         });
 
@@ -323,32 +276,29 @@
 
         window.addEventListener('resize', () => fitAddon.fit());
 
-        // Custom Welcome Message
-        term.writeln('\x1b[38;5;8m----------------------------------------\x1b[0m');
-        term.writeln('\x1b[1;36m NEO CORE SYSTEM v2.5.0 \x1b[0m');
-        term.writeln('\x1b[38;5;8m Visual Interface Active \x1b[0m');
-        term.writeln('\x1b[38;5;8m----------------------------------------\x1b[0m');
+        // Custom Welcome Message (Clean)
+        term.writeln('\x1b[34m• system_ready\x1b[0m');
+        term.writeln('\x1b[30;1mWaiting for input...\x1b[0m');
 
         // --- SOCKET EVENTS ---
         socket.on('connect', () => {
-            term.writeln('\x1b[32m[SYS] Connected.\x1b[0m');
-            statusText.innerText = "ONLINE";
+            term.writeln('\x1b[32m• core_connected\x1b[0m');
+            statusText.innerText = "Listening";
             body.className = "idle";
         });
 
         socket.on('disconnect', () => {
-            term.writeln('\x1b[31m[SYS] Disconnected.\x1b[0m');
-            statusText.innerText = "OFFLINE";
-            body.className = "sleeping";
+            term.writeln('\x1b[31m• core_disconnected\x1b[0m');
+            statusText.innerText = "Offline";
         });
 
         // 1. LOGS in Terminal
         socket.on('log_message', (data) => {
             let msg = data.msg;
-            // Minimalist formatting
-            if (msg.includes('INFO')) msg = `\x1b[32m•\x1b[0m ${msg.replace('INFO', '')}`;
-            else if (msg.includes('WARNING')) msg = `\x1b[33m⚠\x1b[0m ${msg}`;
-            else if (msg.includes('ERROR')) msg = `\x1b[31m✖\x1b[0m ${msg}`;
+            // Clean/Pastel Formatting
+            if (msg.includes('INFO')) msg = `\x1b[32m•\x1b[0m ${msg.replace('INFO', '').trim()}`;
+            else if (msg.includes('WARNING')) msg = `\x1b[33m•\x1b[0m ${msg.replace('WARNING', '').trim()}`;
+            else if (msg.includes('ERROR')) msg = `\x1b[31m•\x1b[0m ${msg.replace('ERROR', '').trim()}`;
 
             term.writeln(msg);
         });
@@ -357,19 +307,22 @@
         socket.on('face_update', (data) => {
             if (data.state) {
                 body.className = data.state;
-                statusText.innerText = data.state.toUpperCase();
-                // term.writeln(`\x1b[90m[STATE] -> ${data.state}\x1b[0m`); // Silent state changes in logs for minimalism?
+                statusText.innerText = data.state;
             }
         });
 
-        // 3. STT / TTS (Transcript in Terminal)
+        // 3. STT / TTS (Transcript)
         socket.on('stt:final', (text) => {
-            term.writeln(`\r\n\x1b[1;35m> ${text}\x1b[0m`);
+            term.writeln(`\r\n\x1b[35muser ➜\x1b[0m ${text}`);
         });
 
         socket.on('tts:start', (text) => {
-            term.writeln(`\x1b[36m< ${text}\x1b[0m`);
+            term.writeln(`\x1b[36mneo ➜\x1b[0m ${text}`);
             body.className = "speaking";
+        });
+
+        socket.on('ai:response', (data) => {
+            // Redundant with tts:start usually, but good fallback
         });
 
         // --- CLOCK & METRICS ---
