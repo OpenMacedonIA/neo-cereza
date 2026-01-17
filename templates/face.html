@@ -35,10 +35,12 @@
             box-sizing: border-box;
         }
 
+        /* BACKGROUND & LAYOUT */
         body {
             margin: 0;
             height: 100vh;
-            background-color: var(--bg);
+            background-color: #000;
+            /* Deepest black for OLED/Minimalism */
             color: var(--text);
             font-family: 'Outfit', sans-serif;
             display: grid;
@@ -53,9 +55,11 @@
         /* --- ZONE 1: TERMINAL (Left) --- */
         #terminal-container {
             grid-area: terminal;
-            background-color: var(--terminal-bg);
-            padding: 10px;
-            border-right: 1px solid var(--border);
+            background-color: #000;
+            /* Seamless match */
+            padding: 20px;
+            /* More breathing room */
+            /* Removed border-right for cleaner look */
             position: relative;
             overflow: hidden;
             height: 100vh;
@@ -72,12 +76,12 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: radial-gradient(circle at center, rgba(0, 40, 80, 0.2), transparent);
+            /* Removed radial gradient background for minimalism */
             position: relative;
             min-height: 300px;
         }
 
-        /* ORB STYLES */
+        /* ORB STYLES (Kept as is, they are the main visual) */
         .orb-container {
             width: 200px;
             height: 200px;
@@ -144,23 +148,29 @@
         #avatar-status {
             margin-top: 20px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.2rem;
+            font-size: 1.0rem;
+            /* Slightly smaller */
             letter-spacing: 2px;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.5);
+            /* Dimmer */
             text-align: center;
         }
 
-        /* --- ZONE 3: STATUS/INPUT (Right Bottom) --- */
+        /* --- ZONE 3: STATUS (Right Bottom) --- */
         #status-bar {
             grid-area: status;
-            background-color: var(--panel-bg);
-            border-top: 1px solid var(--border);
+            /* Transparent background */
+            /* Removed border-top */
             display: flex;
             flex-direction: column;
             padding: 20px;
             gap: 15px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            /* Smaller, cleaner */
+            justify-content: flex-end;
+            /* Push to bottom */
+            padding-bottom: 40px;
         }
 
         .metric-row {
@@ -173,32 +183,15 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .metric i {
             color: var(--accent);
+            opacity: 0.8;
         }
 
-        #cmd-input-container {
-            width: 100%;
-            position: relative;
-        }
-
-        #cmd-input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--accent);
-            padding: 8px 15px;
-            border-radius: 4px;
-            font-family: 'JetBrains Mono', monospace;
-            outline: none;
-        }
-
-        #cmd-input:focus {
-            border-color: var(--accent);
-        }
+        /* INPUT REMOVED - Visual Only */
 
         /* ANIMATIONS */
         @keyframes breathe {
@@ -294,14 +287,10 @@
             </div>
         </div>
 
-        <div class="metric-row" style="justify-content: center;">
+        <div class="metric-row" style="justify-content: center; margin-top: 10px;">
             <div class="metric">
-                <span id="clock" style="font-size: 1.2em; font-weight: bold; color: var(--text);">12:00</span>
+                <span id="clock" style="font-size: 1.1em; color: rgba(255,255,255,0.7);">12:00</span>
             </div>
-        </div>
-
-        <div id="cmd-input-container">
-            <input type="text" id="cmd-input" placeholder=">_ Comando..." autocomplete="off">
         </div>
     </footer>
 
@@ -313,14 +302,15 @@
         // --- XTERM SETUP ---
         const term = new Terminal({
             theme: {
-                background: '#0a0a10',
-                foreground: '#e0e0e0',
+                background: '#000000', // True Black
+                foreground: '#cccccc', // Slightly dimmed text
                 cursor: '#00f2ff',
                 selection: 'rgba(0, 242, 255, 0.3)'
             },
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: 14,
-            cursorBlink: true,
+            fontSize: 13, // Slightly smaller for dense logs
+            cursorBlink: false, // Visual only
+            disableStdin: true, // Read-only
             convertEol: true
         });
 
@@ -333,92 +323,53 @@
 
         window.addEventListener('resize', () => fitAddon.fit());
 
-        term.writeln('\x1b[1;36mNEO CORE SYSTEM v2.5.0 INITIALIZED\x1b[0m');
-        term.writeln('Waiting for connection...');
+        // Custom Welcome Message
+        term.writeln('\x1b[38;5;8m----------------------------------------\x1b[0m');
+        term.writeln('\x1b[1;36m NEO CORE SYSTEM v2.5.0 \x1b[0m');
+        term.writeln('\x1b[38;5;8m Visual Interface Active \x1b[0m');
+        term.writeln('\x1b[38;5;8m----------------------------------------\x1b[0m');
 
         // --- SOCKET EVENTS ---
         socket.on('connect', () => {
-            term.writeln('\r\n\x1b[1;32m[SYSTEM] Connected to Core.\x1b[0m');
+            term.writeln('\x1b[32m[SYS] Connected.\x1b[0m');
             statusText.innerText = "ONLINE";
             body.className = "idle";
         });
 
         socket.on('disconnect', () => {
-            term.writeln('\r\n\x1b[1;31m[SYSTEM] Connection Lost.\x1b[0m');
+            term.writeln('\x1b[31m[SYS] Disconnected.\x1b[0m');
             statusText.innerText = "OFFLINE";
             body.className = "sleeping";
         });
 
         // 1. LOGS in Terminal
         socket.on('log_message', (data) => {
-            // Clean common log garbage if needed, or colorize
             let msg = data.msg;
-            // Simple colorization based on level
-            if (msg.includes('INFO')) msg = `\x1b[32m${msg}\x1b[0m`;
-            else if (msg.includes('WARNING')) msg = `\x1b[33m${msg}\x1b[0m`;
-            else if (msg.includes('ERROR')) msg = `\x1b[31m${msg}\x1b[0m`;
-            else if (msg.includes('CRITICAL')) msg = `\x1b[1;31m${msg}\x1b[0m`;
+            // Minimalist formatting
+            if (msg.includes('INFO')) msg = `\x1b[32m•\x1b[0m ${msg.replace('INFO', '')}`;
+            else if (msg.includes('WARNING')) msg = `\x1b[33m⚠\x1b[0m ${msg}`;
+            else if (msg.includes('ERROR')) msg = `\x1b[31m✖\x1b[0m ${msg}`;
 
             term.writeln(msg);
-            // Auto scroll? xterm handles it usually
         });
 
         // 2. FACE / STATE Updates
         socket.on('face_update', (data) => {
             if (data.state) {
                 body.className = data.state;
-                statusText.innerText = data.state.toUpperCase().replace('_', ' ');
-
-                // Log state triggers to terminal too for visibility
-                term.writeln(`\x1b[90m[STATE] Switched to ${data.state}\x1b[0m`);
+                statusText.innerText = data.state.toUpperCase();
+                // term.writeln(`\x1b[90m[STATE] -> ${data.state}\x1b[0m`); // Silent state changes in logs for minimalism?
             }
         });
 
         // 3. STT / TTS (Transcript in Terminal)
-        socket.on('stt:partial', (text) => {
-            // Maybe verify heavy spam?
-            // term.write(`\r> ${text}`); // Overwrite line
-        });
-
         socket.on('stt:final', (text) => {
-            term.writeln(`\r\n\x1b[1;35m[USER] ${text}\x1b[0m`);
+            term.writeln(`\r\n\x1b[1;35m> ${text}\x1b[0m`);
         });
 
         socket.on('tts:start', (text) => {
-            term.writeln(`\r\n\x1b[1;36m[NEO] ${text}\x1b[0m`);
+            term.writeln(`\x1b[36m< ${text}\x1b[0m`);
             body.className = "speaking";
-        });
-
-        socket.on('ai:response', (data) => {
-            // Redundant with tts:start usually, but good fallback
-        });
-
-        // --- COMMAND INPUT ---
-        const input = document.getElementById('cmd-input');
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const cmd = input.value;
-                if (cmd) {
-                    socket.emit('message', { type: 'command', text: cmd }); // Assuming this endpoint handling exists or we add it
-                    // Alternatively use generic text processing
-                    // socket.emit('process_text', { text: cmd }); 
-
-                    // Since web_admin.py handles 'message' via handle_message which broadcasts... 
-                    // We probably want to hit the API or emit a specific event managed by NeoCore.
-                    // For now, let's use a fetch to the /api endpoint if possible or broadcast to bus.
-
-                    fetch('/api/command', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ command: cmd })
-                    }).then(res => {
-                        term.writeln(`\x1b[90m[CMD] Sent: ${cmd}\x1b[0m`);
-                        input.value = '';
-                    }).catch(err => {
-                        term.writeln(`\x1b[31m[CMD] Error sending command\x1b[0m`);
-                    });
-                }
-            }
         });
 
         // --- CLOCK & METRICS ---
