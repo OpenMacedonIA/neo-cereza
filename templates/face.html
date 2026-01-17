@@ -151,7 +151,7 @@
             font-size: 0.85rem;
             justify-content: flex-end;
             padding-bottom: 80px;
-            /* Raised significantly (was 50px) */
+            /* Raised significantly */
         }
 
         .metric-row {
@@ -252,12 +252,12 @@
         const term = new Terminal({
             theme: {
                 background: '#1a1e24', // Matching Body
-                foreground: '#b8c9d9', // Much brighter/whiter text (was #a0aab5)
+                foreground: '#cbe1f2', // EXTRA BRIGHT WHITE/BLUE (High readability)
                 cursor: '#00f2ff', // Electric Cursor
                 selection: 'rgba(0, 242, 255, 0.2)',
                 black: '#1a1e24',
-                red: '#ff6b6b', // Slightly brighter red
-                green: '#5aff89', // Slightly brighter green
+                red: '#ff6b6b',
+                green: '#5aff89',
                 yellow: '#f4ff91',
                 blue: '#caa3ff',
                 magenta: '#ff8fd2',
@@ -267,7 +267,7 @@
             },
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: 13,
-            lineHeight: 1.2,
+            lineHeight: 1.3, /* Better readability */
             cursorBlink: false,
             disableStdin: true,
             convertEol: true
@@ -285,20 +285,22 @@
         // Custom Welcome Message (Cyberpunk)
         term.writeln('\x1b[36m┌────────────────────────────────────────┐\x1b[0m');
         term.writeln('\x1b[36m│ NEO CORE SYSTEM v2.5.0                 │\x1b[0m');
-        term.writeln('\x1b[36m│ STATUS: \x1b[32mONLINE\x1b[36m                         │\x1b[0m');
+        term.writeln('\x1b[36m│ STATUS: \x1b[1;32mONLINE\x1b[0;36m                         │\x1b[0m'); // Bright Green Online
         term.writeln('\x1b[36m└────────────────────────────────────────┘\x1b[0m');
         term.writeln('');
 
         // --- SOCKET EVENTS ---
         socket.on('connect', () => {
-            term.writeln('\x1b[90m[SYS] Uplink established.\x1b[0m');
+            // CHANGED: [SYS] is now Neon Green (\x1b[1;32m) for visibility
+            term.writeln('\x1b[1;32m[SYS]\x1b[0m \x1b[90mUplink established.\x1b[0m');
             statusText.innerText = "SYSTEM READY";
             statusText.style.color = "#00f2ff";
             body.className = "idle";
         });
 
         socket.on('disconnect', () => {
-            term.writeln('\x1b[31m[SYS] Uplink lost.\x1b[0m');
+            // CHANGED: [SYS] is now Bright Red (\x1b[1;31m)
+            term.writeln('\x1b[1;31m[SYS]\x1b[0m \x1b[90mUplink lost.\x1b[0m');
             statusText.innerText = "OFFLINE";
             statusText.style.color = "#ff5555";
         });
@@ -324,10 +326,12 @@
 
         // 3. STT / TTS (Transcript)
         socket.on('stt:final', (text) => {
-            term.writeln(`\r\n\x1b[35m[USER]\x1b[0m ${text}`);
+            // [USER] Bright Magenta
+            term.writeln(`\r\n\x1b[1;35m[USER]\x1b[0m ${text}`);
         });
 
         socket.on('tts:start', (text) => {
+            // [NEO] Cyan
             term.writeln(`\x1b[36m[NEO]\x1b[0m ${text}`);
             body.className = "speaking";
         });
