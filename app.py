@@ -195,5 +195,5 @@ def api_proxy(path):
 if __name__ == "__main__":
     print(f"🚀 Neo Headless Client starting...")
     print(f"🔗 Connected to NeoCore at: {NEO_API_URL}")
-    print(f"🌍 Web Interface at: http://0.0.0.0:8000")
-    app.run(host='0.0.0.0', port=8000)
+    print(f"🌍 Web Interface at: http://0.0.0.0:8092")
+    app.run(host='0.0.0.0', port=8092)
