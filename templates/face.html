@@ -1,762 +1,261 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEO // CORE</title>
+    <title>NEO // FACE</title>
 
     <!-- Dependencias -->
     <script src="/static/js/socket.io.min.js"></script>
-    <link rel="stylesheet" href="/static/css/xterm.css" />
-    <script src="/static/js/xterm.js"></script>
-    <script src="/static/js/xterm-addon-fit.js"></script>
-
-    <!-- Fuentes: Inter para la Interfaz, JetBrains Mono para el Código -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
 
     <style>
         :root {
-            /* Tema Premium / Moderno del Dashboard */
-            /* Fondos: Azul Pizarra Profundo */
-            --bg-color: #0b0f19;
-            /* Pizarra Más Oscura */
-            --panel-bg: #111827;
-            /* Panel Pizarra */
-            --terminal-bg: #121621;
-            /* Fondo de Terminal */
-
-            /* Texto */
-            --text-primary: #f1f5f9;
-            /* Pizarra 100 */
-            --text-secondary: #94a3b8;
-            /* Pizarra 400 */
-            --text-dim: #475569;
-            /* Pizarra 600 */
-
-            /* Acentos: Azul Cielo / Índigo Eléctrico */
-            --accent-color: #38bdf8;
-            /* Cielo 400 */
-            --accent-secondary: #818cf8;
-            /* Índigo 400 */
-            --accent-glow: rgba(56, 189, 248, 0.15);
-
-            --border-color: #1e293b;
-            /* Pizarra 800 */
-
-            --success-color: #4ade80;
-            /* Verde 400 */
-            --warning-color: #fbbf24;
-            /* Ámbar 400 */
-            --error-color: #f87171;
-            /* Rojo 400 */
+            --bg-color: #1a1a1a;
+            --face-bg: #000000;
+            --neon-color: #4ade80; /* Mint Green */
+            --bracket-color: #4ade80;
+            --face-shine: rgba(255, 255, 255, 0.15);
         }
 
         body {
             background-color: var(--bg-color);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
             margin: 0;
             height: 100vh;
-            overflow: hidden;
-            display: grid;
-            grid-template-areas:
-                "terminal avatar"
-                "bottom bottom";
-            grid-template-columns: 7fr 3fr;
-            grid-template-rows: 1fr 48px;
-            gap: 0;
-        }
-
-        /* --- ÁREA DE LA TERMINAL (Izquierda) --- */
-        .terminal-container {
-            grid-area: terminal;
-            background: var(--terminal-bg);
-            padding: 40px 48px 20px 48px;
-            /* Espacio para respirar */
-            border-right: 1px solid var(--border-color);
-            position: relative;
             display: flex;
-            flex-direction: column;
-        }
-
-        .terminal-header {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            background-color: var(--accent-color);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--accent-color);
-        }
-
-        #terminal {
-            flex: 1;
-            opacity: 0.95;
-        }
-
-        /* --- ÁREA DEL AVATAR (Derecha) --- */
-        .avatar-container {
-            grid-area: avatar;
-            background: linear-gradient(145deg, var(--panel-bg), var(--bg-color));
-            display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+            font-family: monospace;
+        }
+
+        .face-container {
+            width: 400px;
+            height: 250px;
+            background-color: var(--face-bg);
+            border-radius: 125px; /* Oval shape */
             position: relative;
-            box-shadow: inset 20px 0 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 
+                0 0 50px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(74, 222, 128, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 4px solid #0f0f0f;
+            overflow: hidden; /* For terminal text */
+            transition: all 0.3s ease;
         }
 
-        /* Orbe Elegante */
-        .orb {
-            width: 140px;
-            height: 140px;
-            /* Gradiente de múltiples paradas para profundidad */
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), var(--accent-color) 40%, transparent 70%);
-            border-radius: 50%;
-            opacity: 0.8;
-            filter: blur(20px);
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: scale(0.9);
-            box-shadow: 0 0 60px var(--accent-glow);
-        }
-
-        /* Anillos sutiles */
-        .ring {
+        /* Glossy shine effect on the glass screen */
+        .face-container::before {
+            content: '';
             position: absolute;
-            border-radius: 50%;
-            border: 1px solid var(--border-color);
-            opacity: 0.3;
-            transition: all 1s ease;
-        }
-
-        .ring-1 {
-            width: 220px;
-            height: 220px;
-            animation: breathe-ring 8s infinite alternate;
-        }
-
-        .ring-2 {
-            width: 280px;
-            height: 280px;
-            animation: breathe-ring 12s infinite alternate-reverse;
-        }
-
-        @keyframes breathe-ring {
-            0% {
-                transform: scale(1);
-                opacity: 0.2;
-            }
-
-            100% {
-                transform: scale(1.05);
-                opacity: 0.4;
-            }
-        }
-
-        /* Modificadores de Estado */
-        .avatar-container.listening .orb {
-            background: radial-gradient(circle at 50% 50%, #ffffff, #e2e8f0 40%, transparent 70%);
-            /* Blanco Brillante */
-            filter: blur(15px);
-            transform: scale(1.1);
-            box-shadow: 0 0 80px rgba(255, 255, 255, 0.2);
-        }
-
-        .avatar-container.speaking .orb {
-            animation: pulse-speak 0.5s infinite alternate;
-            background: radial-gradient(circle at 50% 50%, var(--accent-color), var(--accent-secondary) 50%, transparent 80%);
-            opacity: 1;
-        }
-
-        .avatar-container.thinking .orb {
-            animation: spin-slow 2s infinite linear;
-            background: conic-gradient(from 0deg, transparent, var(--accent-color), transparent);
-            filter: blur(30px);
-            transform: scale(1.2);
-        }
-
-        @keyframes pulse-speak {
-            0% {
-                transform: scale(1);
-                opacity: 0.8;
-            }
-
-            100% {
-                transform: scale(1.15);
-                opacity: 1;
-            }
-        }
-
-        @keyframes spin-slow {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        #status-text {
-            margin-top: 180px;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            letter-spacing: 2px;
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-        }
-
-        /* --- BARRA INFERIOR --- */
-        .bottom-bar {
-            grid-area: bottom;
-            background: #0f121a;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            font-family: 'JetBrains Mono', monospace;
-            z-index: 20;
-        }
-
-        .bar-left {
-            color: var(--text-dim);
-            font-size: 0.7rem;
-        }
-
-        .bar-right {
-            display: flex;
-            gap: 40px;
-        }
-
-        .metric {
-            display: flex;
-            align-items: center;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            gap: 12px;
-        }
-
-        .metric strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .metric-label {
-            color: var(--text-dim);
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* --- MODO PIP --- */
-        .avatar-container.pip-mode {
-            position: fixed !important;
-            top: 20px !important;
-            right: 20px !important;
-            width: 120px !important;
-            height: 120px !important;
-            z-index: 9999 !important;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            grid-area: unset !important;
-        }
-
-        .avatar-container.pip-mode .orb {
-            width: 60px !important;
-            height: 60px !important;
-        }
-
-        .avatar-container.pip-mode .ring {
-            width: 80px !important;
-            height: 80px !important;
-        }
-
-        .avatar-container.pip-mode #status-text {
-            display: none;
-        }
-
-        .avatar-container.pip-mode #input-container {
-            display: none !important;
-        }
-
-        .avatar-container.pip-mode a {
-            display: none !important;
-        }
-
-        /* Superposición del Visor de Archivos */
-        #file-viewer {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-color);
-            z-index: 1000;
-            overflow: auto;
-            padding: 3rem;
-        }
-
-        #file-viewer.active {
-            display: block;
-        }
-
-        #file-viewer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: var(--panel-bg);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
-
-        #file-viewer-content pre {
-            background: var(--terminal-bg);
-            color: var(--text-primary);
-            padding: 1.5rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        #file-viewer-content img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        }
-
-        #file-viewer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        #file-viewer-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--accent-color);
-        }
-
-        .close-viewer-btn {
-            background: rgba(248, 113, 113, 0.15);
-            border: 1px solid var(--error-color);
-            color: var(--error-color);
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .close-viewer-btn:hover {
-            background: rgba(248, 113, 113, 0.3);
-            box-shadow: 0 0 15px rgba(248, 113, 113, 0.3);
-        }
-
-        /* Ocultar terminal/barra inferior en modo PIP */
-        body.pip-active .terminal-container,
-        body.pip-active .bottom-bar {
-            opacity: 0.3;
+            top: 5%;
+            left: 5%;
+            width: 90%;
+            height: 40%;
+            background: linear-gradient(to bottom, var(--face-shine), transparent);
+            border-radius: 100px 100px 0 0;
             pointer-events: none;
         }
+
+        /* Terminal Brackets [ ] */
+        .bracket {
+            position: absolute;
+            color: var(--bracket-color);
+            font-size: 40px;
+            font-weight: bold;
+            opacity: 0.8;
+            text-shadow: 0 0 10px var(--bracket-color);
+        }
+
+        .bracket-tl { top: 20px; left: 40px; }
+        .bracket-tr { top: 20px; right: 40px; }
+        .bracket-bl { bottom: 20px; left: 40px; }
+        .bracket-br { bottom: 20px; right: 40px; }
+
+        /* The Expression Text */
+        #expression {
+            color: var(--neon-color);
+            font-size: 80px;
+            font-weight: bold;
+            text-shadow: 0 0 15px var(--neon-color), 0 0 30px var(--neon-color);
+            letter-spacing: 10px;
+            transition: all 0.2s ease-in-out;
+            white-space: pre; /* to preserve spaces */
+        }
+
+        /* Terminal Mode Styling */
+        #terminal-text {
+            color: var(--neon-color);
+            font-size: 14px;
+            text-shadow: 0 0 5px var(--neon-color);
+            position: absolute;
+            top: 20px;
+            left: 40px;
+            right: 40px;
+            bottom: 20px;
+            overflow: hidden;
+            display: none;
+            word-wrap: break-word;
+            opacity: 0.8;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { text-shadow: 0 0 10px var(--neon-color); }
+            50% { text-shadow: 0 0 25px var(--neon-color), 0 0 40px var(--neon-color); }
+            100% { text-shadow: 0 0 10px var(--neon-color); }
+        }
+
+        .thinking #expression {
+            animation: pulse 1s infinite alternate;
+        }
+        
     </style>
 </head>
-
 <body>
 
-    <!-- Terminal -->
-    <div class="terminal-container">
-        <div class="terminal-header">
-            <div class="status-dot"></div>
-            <span>Interaction Log</span>
-        </div>
-        <div id="terminal"></div>
+    <div class="face-container" id="face">
+        <!-- Corner Brackets -->
+        <div class="bracket bracket-tl">┌</div>
+        <div class="bracket bracket-tr">┐</div>
+        <div class="bracket bracket-bl">└</div>
+        <div class="bracket bracket-br">┘</div>
+
+        <!-- Expression Display -->
+        <div id="expression">^ ^</div>
+        
+        <!-- Terminal Text Display (Hidden by default) -->
+        <div id="terminal-text"></div>
     </div>
 
-    <!-- Avatar -->
-    <div class="avatar-container" id="avatar-container">
-        <div class="ring ring-1"></div>
-        <div class="ring ring-2"></div>
-        <div class="orb" id="orb"></div>
-        <div id="status-text">Standby</div>
-        <!-- Superposición de Entrada Manual (Visible) -->
-        <div id="input-container"
-            style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 60%; z-index: 100; transition: all 0.3s ease;">
-            <input type="text" id="manual-cmd" style="width: 100%; background: rgba(17, 24, 39, 0.8); border: 1px solid var(--border-color); 
-                          color: var(--text-primary); font-family: 'JetBrains Mono'; font-size: 0.9rem; padding: 12px 20px; 
-                          border-radius: 20px; backdrop-filter: blur(8px); text-align: center; outline: none;
-                          box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s;"
-                onfocus="this.style.borderColor = 'var(--accent-color)'; this.style.boxShadow = '0 0 15px var(--accent-glow)';"
-                onblur="this.style.borderColor = 'var(--border-color)'; this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';"
-                placeholder="Type a command...">
-        </div>
-        <!-- Botón de Navegación al Panel de Administración -->
-        <a href="/dashboard" style="position: absolute; top: 20px; right: 20px; background: rgba(56, 189, 248, 0.15); 
-                   border: 1px solid var(--accent-color); color: var(--accent-color); 
-                   padding: 10px 20px; border-radius: 8px; text-decoration: none; 
-                   font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
-                   backdrop-filter: blur(10px); transition: all 0.3s;
-                   box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10;"
-            onmouseover="this.style.background='rgba(56, 189, 248, 0.3)'; this.style.boxShadow='0 0 15px var(--accent-glow)';"
-            onmouseout="this.style.background='rgba(56, 189, 248, 0.15)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.3)';">
-            Admin Panel
-        </a>
-    </div>
-
-    <!-- Superposición del Visor de Archivos (Modo PIP) -->
-    <div id="file-viewer">
-        <div id="file-viewer-content">
-            <div id="file-viewer-header">
-                <div id="file-viewer-title">Loading...</div>
-                <button class="close-viewer-btn" onclick="closePIPMode()">Close (ESC)</button>
-            </div>
-            <div id="file-content-display"></div>
-        </div>
-    </div>
-
-    <!-- Barra Inferior -->
-    <div class="bottom-bar">
-        <div class="bar-left">
-            NEO-Papaya v2.5.0
-        </div>
-        <div class="bar-right">
-            <div class="metric">
-                <span class="metric-label">CPU</span>
-                <strong id="cpu-val">--%</strong>
-            </div>
-            <div class="metric">
-                <span class="metric-label">Memory</span>
-                <strong id="ram-val">--%</strong>
-            </div>
-            <div class="metric">
-                <span class="metric-label">Uptime</span>
-                <strong id="uptime-val">00:00</strong>
-            </div>
-        </div>
-    </div>
 
     <script>
-        // Iniciar xterm (Tema Moderno)
-        const term = new Terminal({
-            cursorBlink: true,
-            cursorStyle: 'bar',
-            theme: {
-                background: '#121621', // Coincide con CSS
-                foreground: '#cbd5e1', // Pizarra 300
-                cursor: '#38bdf8',     // Cielo 400
-                selection: 'rgba(56, 189, 248, 0.2)',
-                black: '#1e293b',
-                red: '#ef4444',
-                green: '#4ade80',      // Verde Suave
-                yellow: '#fbbf24',     // Ámbar Suave
-                blue: '#60a5fa',       // Azul Suave
-                magenta: '#c084fc',
-                cyan: '#22d3ee',
-                white: '#f8fafc',
-                brightBlack: '#475569'
-            },
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: 15,
-            lineHeight: 1.5, // Más legible
-            allowTransparency: false
-        });
-
-        const fitAddon = new FitAddon.FitAddon();
-        term.loadAddon(fitAddon);
-
-        term.open(document.getElementById('terminal'));
-        fitAddon.fit();
-
-        window.addEventListener('resize', () => fitAddon.fit());
-
-        // Writeln Pesonalizado
-        const writeLog = (msg, colorCode = '\x1b[37m') => {
-            const now = new Date();
-            const time = now.toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" });
-            // Marca de tiempo atenuada (Pizarra 600)
-            term.writeln(`\x1b[38;5;240m${time}\x1b[0m  ${colorCode}${msg}\x1b[0m`);
+        // Expression Dictionary
+        const expressions = {
+            'idle': '^ ^',           // 1. Standard Happy
+            'love': '♥ ♥',           // 2. Love/Adoration
+            'winking': '− ^',        // 3. Winking/Playful
+            'surprised': 'O O',      // 4. Surprised/Wow  (user_detected / alert)
+            'thinking': '...',       // 5. Thinking/Loading
+            'sad': '; _ ;',          // 7. Sad/Concerned (error)
+            'angry': '> _ <',        // 8. Angry/Determined
+            'mischievous': '¬ ‿ ¬',  // 9. Mischievous/Hacker
+            'speaking': '− ‿ −'      // custom speaking mouth
         };
 
-        writeLog('System initialized.', '\x1b[38;5;250m');
+        const expressionEl = document.getElementById('expression');
+        const faceEl = document.getElementById('face');
+        const terminalEl = document.getElementById('terminal-text');
 
-        // Conectar Socket a NeoCore con reconexión mejorada
+        function setExpression(state) {
+            faceEl.className = 'face-container'; // reset classes
+            terminalEl.style.display = 'none';
+            expressionEl.style.display = 'block';
+
+            if (state === 'terminal' || state === 'executing') {
+                // 6. Terminal/SysAdmin Mode
+                expressionEl.style.display = 'none';
+                terminalEl.style.display = 'block';
+                return;
+            }
+
+            if (expressions[state]) {
+                expressionEl.textContent = expressions[state];
+                if (state === 'thinking') {
+                    faceEl.classList.add('thinking');
+                }
+            } else {
+                expressionEl.textContent = expressions['idle'];
+            }
+        }
+
+        // Simular logs de terminal para el modo SysAdmin
+        let terminalLines = [];
+        function addTerminalLine(text) {
+            terminalLines.push(text);
+            if (terminalLines.length > 10) terminalLines.shift();
+            terminalEl.innerHTML = terminalLines.join('<br>') + '<br>_';
+        }
+
+        // Conectar Socket a NeoCore
         const socketUrl = "{{ socket_url }}" || undefined;
         const socket = io(socketUrl, {
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
-            reconnectionAttempts: Infinity,
-            timeout: 20000,
-            transports: ['websocket', 'polling']
+            reconnectionAttempts: Infinity
         });
 
         socket.on('connect', () => {
-            console.log(' Connected to NeoCore');
+            console.log('Connected to NeoCore');
+            setExpression('idle');
         });
 
-        socket.on('disconnect', (reason) => {
-            console.warn(' Disconnected:', reason);
-            if (reason === 'io server disconnect') {
-                socket.connect();
-            }
+        socket.on('disconnect', () => {
+            console.warn('Disconnected');
+            setExpression('sad');
         });
 
-        socket.on('reconnect', (attemptNumber) => {
-            console.log(' Reconnected after', attemptNumber, 'attempts');
-            writeLog('Reconnected to server', '\\x1b[32m');
-        });
-
-        // --- EVENTS ---
-
-        // 1. Transmisión de Logs
-        socket.on('log_message', (data) => {
-            let msg = data.msg;
-            if (msg.includes('DEBUG')) return;
-            msg = msg.replace(/\n/g, '\r\n');
-            // Gris más brillante para mejor visibilidad
-            term.writeln(`\x1b[38;5;246m${msg}\x1b[0m`);
-        });
-
-        // 2. Resultado STT (Voz del Usuario)
-        socket.on('stt:result', (data) => {
-            const text = data.text;
-            term.writeln('');
-            // Blanco brillante y negrita para la entrada del Usuario
-            term.writeln(`\x1b[1;97m${text}\x1b[0m`);
-        });
-
-        // 3. IA Pensando/Respondiendo
-        socket.on('ai:response', (data) => {
-            const text = data.text;
-            // Cian brillante para la respuesta de IA
-            term.writeln(`\x1b[1;96mNeo: ${text}\x1b[0m`);
-        });
-
-        // 4. Ejecución de Comandos
-        socket.on('command:execution', (data) => {
-            const cmd = data.cmd;
-            term.writeln('');
-            // Ámbar Suave para la Acción
-            term.writeln(`\x1b[38;5;180m$ ${cmd}\x1b[0m`);
-        });
-
-        // 5. Salida de Comandos
-        socket.on('command:output', (data) => {
-            const output = data.output;
-            // Pizarra 400 para la salida
-            term.writeln(`\x1b[38;5;248m${output.replace(/\n/g, '\r\n')}\x1b[0m`);
-        });
-
-        // Estados del Avatar
-        const avatarContainer = document.getElementById('avatar-container');
-        const statusText = document.getElementById('status-text');
-
+        // Eventos Principales del Rostro
         socket.on('face_update', (data) => {
-            const state = data.state;
-
-            avatarContainer.classList.remove('listening', 'speaking', 'thinking', 'idle');
-
-            if (state === 'listening' || state === 'user_detected') {
-                avatarContainer.classList.add('listening');
-            } else if (state === 'thinking') {
-                avatarContainer.classList.add('thinking');
-            } else if (state === 'speaking') {
-                avatarContainer.classList.add('speaking');
+            const state = data.state; // 'listening', 'speaking', 'thinking', 'idle', 'user_detected'
+            
+            if (state === 'user_detected') {
+                setExpression('surprised');
+                setTimeout(() => setExpression('idle'), 2000);
+            } else if (state === 'listening') {
+                setExpression('winking');
             } else {
-                avatarContainer.classList.add('idle');
-            }
-            statusText.innerText = state;
-        });
-
-        // Actualizar Estadísticas (Polling)
-        function updateStats() {
-            fetch('/api/stats')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('cpu-val').innerText = data.cpu_usage + '%';
-                    document.getElementById('ram-val').innerText = data.ram_usage + '%';
-                })
-                .catch(e => console.log("Stats poll fail (normal in mock)", e));
-        }
-
-        // Consultar cada 3s
-        setInterval(updateStats, 3000);
-        updateStats();
-
-        // --- MANEJADOR DEL MODO PIP ---
-        let pipModeActive = false;
-
-        socket.on('ui:pip_mode', (data) => {
-            console.log('PIP Mode Event:', data);
-
-            if (data.enabled && data.action === 'show') {
-                enterPIPMode(data);
-            } else if (!data.enabled || data.action === 'close') {
-                exitPIPMode();
+                setExpression(state);
             }
         });
 
-        function enterPIPMode(data) {
-            pipModeActive = true;
-            document.body.classList.add('pip-active');
-            avatarContainer.classList.add('pip-mode');
-
-            const fileViewer = document.getElementById('file-viewer');
-            const fileTitle = document.getElementById('file-viewer-title');
-            const fileContent = document.getElementById('file-content-display');
-
-            const fileName = data.file_path ? data.file_path.split('/').pop() : 'File';
-            fileTitle.textContent = fileName;
-
-            const contentUrl = `/api/visual/content?path=${encodeURIComponent(data.file_path)}`;
-
-            if (data.file_type === 'txt' || data.file_type === 'md' || data.file_type === 'log' || data.file_type === 'conf') {
-                fetch(contentUrl)
-                    .then(r => r.text())
-                    .then(text => {
-                        fileContent.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
-                    })
-                    .catch(err => {
-                        fileContent.innerHTML = `<pre>Error loading file: ${err.message}</pre>`;
-                    });
-            } else if (['py', 'js', 'sh', 'json', 'yaml', 'yml', 'xml', 'html', 'css'].includes(data.file_type)) {
-                fetch(contentUrl)
-                    .then(r => r.text())
-                    .then(code => {
-                        fileContent.innerHTML = `<pre><code>${escapeHtml(code)}</code></pre>`;
-                    })
-                    .catch(err => {
-                        fileContent.innerHTML = `<pre>Error loading file: ${err.message}</pre>`;
-                    });
-            } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(data.file_type)) {
-                fileContent.innerHTML = `<img src="${contentUrl}" alt="${fileName}">`;
-            } else if (data.file_type === 'external') {
-                fileContent.innerHTML = `<div style="text-align: center; padding: 3rem;">
-                    <p style="font-size: 1.1rem; color: var(--text-secondary);">File opened in external viewer: <strong>${data.viewer_app}</strong></p>
-                    <p style="color: var(--text-dim); margin-top: 1rem;">Say "close" or press ESC to exit PIP mode</p>
-                </div>`;
-            }
-
-            fileViewer.classList.add('active');
-            statusText.textContent = 'Listening (PIP)';
-            console.log('Entered PIP mode for:', data.file_path);
-        }
-
-        function exitPIPMode() {
-            if (!pipModeActive) return;
-
-            pipModeActive = false;
-            document.body.classList.remove('pip-active');
-            avatarContainer.classList.remove('pip-mode');
-
-            const fileViewer = document.getElementById('file-viewer');
-            fileViewer.classList.remove('active');
-
-            const fileContent = document.getElementById('file-content-display');
-            fileContent.innerHTML = '';
-
-            statusText.textContent = 'Standby';
-            console.log('Exited PIP mode');
-        }
-
-        function closePIPMode() {
-            exitPIPMode();
-
-            fetch('/api/command/inject', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: 'cierra la pantalla' })
-            });
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Manejador de la tecla ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && pipModeActive) {
-                closePIPMode();
+        // Eventos Secundarios para otras emociones
+        socket.on('emotion_update', (data) => {
+            // Permite inyectar emociones específicas: 'love', 'angry', 'mischievous', 'sad'
+            const emotion = data.emotion;
+            setExpression(emotion);
+            
+            // Volver a idle después de unos segundos a menos que sea un estado persistente
+            if (data.temp !== false) {
+                 setTimeout(() => setExpression('idle'), 3000);
             }
         });
 
-        // Auto-cierre con comandos de voz - Interceptar resultados STT
-        const originalSTTHandler = (data) => {
-            const output = data.text;
-            term.writeln(`USER: ${output}`);
-
-            // Comprobar palabras clave de cierre si está en modo PIP
-            if (pipModeActive) {
-                const text = output.toLowerCase();
-                const closeKeywords = ['cierra', 'cerrar', 'vale perfecto', 'quita', 'cancel'];
-
-                if (closeKeywords.some(kw => text.includes(kw))) {
-                    console.log('Auto-closing PIP mode due to voice command:', text);
-                    exitPIPMode();
+        // Capturar ejecución de comandos para el Modo Terminal (6)
+        socket.on('command:execution', (data) => {
+            setExpression('terminal');
+            addTerminalLine(`> Executing: ${data.cmd}`);
+            
+            // Volver a idle despues de un tiempo simulado si no hay respuesta
+            setTimeout(() => {
+                if(faceEl.className.includes('face-container') && terminalEl.style.display === 'block'){
+                    setExpression('idle');
                 }
-            }
-        };
+            }, 5000);
+        });
 
-        socket.on('stt:result', originalSTTHandler);
-
-        // --- Lógica de Entrada Manual ---
-        const inputContainer = document.getElementById('input-container');
-        const inputField = document.getElementById('manual-cmd');
-
-        document.addEventListener('keydown', (e) => {
-            // Presionar 'Enter' para enfocar la entrada si no está enfocada
-            if (e.key === 'Enter') {
-                if (document.activeElement !== inputField) {
-                    inputField.focus();
-                } else {
-                    // Enviar comando vía Bus de Mensajes (como inject_command.py)
-                    const cmd = inputField.value.trim();
-                    if (cmd) {
-                        // Emitir al bus usando el mismo evento que inject_command.py
-                        socket.emit('message', {
-                            type: 'command:inject',
-                            data: { text: cmd },
-                            context: { source: 'FaceUI' }
-                        });
-
-                        term.writeln(`\x1b[38;5;180m> [GUI] SENT: ${cmd}\x1b[0m`);
-                        inputField.value = '';
-                    }
-                    inputField.blur();
-                }
-            }
-            // Escape para quitar el foco
-            if (e.key === 'Escape') {
-                inputField.blur();
+        socket.on('command:output', (data) => {
+             if(terminalEl.style.display === 'none') {
+                 setExpression('terminal');
+             }
+             const lines = data.output.split('\n');
+             lines.forEach(l => {
+                 if(l.trim()) addTerminalLine(l);
+             });
+             
+             // Volver a idle después de mostrar la salida
+             setTimeout(() => setExpression('idle'), 4000);
+        });
+        
+        // Log simple para ver que pasa en el server si el terminal esta activo
+        socket.on('log_message', (data) => {
+            if(terminalEl.style.display === 'block') {
+                addTerminalLine(data.msg);
             }
         });
 
     </script>
 </body>
-
 </html>
