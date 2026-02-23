@@ -9,7 +9,7 @@
     <div class="card-body">
         <div id="speech-log" class="terminal-window"
             style="height: 500px; overflow-y: auto; display: flex; flex-direction: column-reverse;">
-            <!-- Chat bubbles will appear here -->
+            <!-- Las burbujas de chat aparecerán aquí -->
         </div>
     </div>
 </div>
@@ -24,9 +24,9 @@
                 const container = document.getElementById('speech-log');
                 container.innerHTML = ''; // Clear current
 
-                // Data comes sorted DESC (newest first), but we want to display newest at bottom usually?
-                // Actually, flex-direction: column-reverse handles "newest at bottom" if we append them in order?
-                // Let's just render them.
+                // Los datos vienen ordenados DESC (más nuevos primero), ¿pero queremos mostrar los más nuevos abajo habitualmente?
+                // En realidad, flex-direction: column-reverse maneja "más nuevos abajo" si los añadimos en orden?
+                // Simplemente los renderizamos.
 
                 data.forEach(item => {
                     const row = document.createElement('div');
@@ -47,7 +47,7 @@
             .catch(err => console.error('Error fetching speech history:', err));
     }
 
-    // Update every 2 seconds
+    // Actualizar cada 2 segundos
     setInterval(updateSpeechLog, 2000);
     updateSpeechLog();
 </script>

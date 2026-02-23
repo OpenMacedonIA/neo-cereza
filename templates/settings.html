@@ -32,7 +32,7 @@
     <div class="col-md-9">
         <div class="tab-content">
 
-            <!-- GENERAL TAB -->
+            <!-- PESTAÑA GENERAL -->
             <div class="tab-pane fade show active" id="general" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
@@ -77,7 +77,7 @@
                 </div>
             </div>
 
-            <!-- APARIENCIA TAB (Moved Custom CSS Here) -->
+            <!-- PESTAÑA APARIENCIA (CSS Personalizado movido aquí) -->
             <div class="tab-pane fade" id="appearance" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
@@ -86,9 +86,9 @@
                     <div class="card-body">
                         <form method="post">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <!-- Hidden Required Fields needed to post form without error if reusing same backend endpoint that expects them, 
-                                 BUT web_admin.py handles them via request.form.get so if missing it might be fine or reset them.
-                                 Let's add hidden fields for safe updates if we use the same endpoint. -->
+                            <!-- Campos Requeridos Ocultos necesarios para publicar el formulario sin error si se reutiliza el mismo endpoint backend que los espera, 
+                                 PERO web_admin.py los maneja vía request.form.get por lo que si faltan podría estar bien o reiniciarlos.
+                                 Añadiremos campos ocultos para actualizaciones seguras si usamos el mismo endpoint. -->
                             <input type="hidden" name="username" value="{{ config.admin_user }}">
                             <input type="hidden" name="wake_word" value="{{ config.wake_word }}">
 
@@ -110,11 +110,11 @@
                 </div>
             </div>
 
-            <!-- AI TAB -->
+            <!-- PESTAÑA IA -->
             <div class="tab-pane fade" id="ai" role="tabpanel">
-                <!-- ... AI content (omitted to save generated length, assuming logic is preserved or user can deal with it) ... -->
-                <!-- Ideally I should preserve existing content, but for this specific tool usage I'm replacing a block. -->
-                <!-- Re-injecting standard AI Tab content for completeness to avoid deletion -->
+                <!-- ... Contenido de IA (omitido para ahorrar longitud generada, suponiendo que la lógica se preserve o el usuario pueda manejarla) ... -->
+                <!-- Idealmente debería preservar el contenido existente, pero para este uso específico de la herramienta estoy reemplazando un bloque. -->
+                <!-- Reinyectando el contenido estándar de la pestaña IA para completitud y evitar eliminación -->
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Configuración de IA</h5>
@@ -155,7 +155,7 @@
                 </div>
             </div>
 
-            <!-- ABOUT TAB -->
+            <!-- PESTAÑA ACERCA DE -->
             <div class="tab-pane fade" id="about" role="tabpanel">
                 <div class="card border-info border-opacity-25">
                     <div class="card-header bg-info bg-opacity-10">
@@ -226,7 +226,7 @@
                 </div>
             </div>
 
-            <!-- ADVANCED TAB -->
+            <!-- PESTAÑA AVANZADO -->
             <div class="tab-pane fade" id="advanced" role="tabpanel">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -242,7 +242,7 @@
                 </div>
             </div>
 
-            <!-- DOCS TAB -->
+            <!-- PESTAÑA DOCS -->
             <div class="tab-pane fade" id="docs" role="tabpanel">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -264,7 +264,7 @@
                 </div>
             </div>
 
-            <!-- EXPERIMENTAL TAB -->
+            <!-- PESTAÑA EXPERIMENTAL -->
             <div class="tab-pane fade" id="experimental" role="tabpanel">
                 <div class="card border-warning">
                     <div class="card-header bg-warning text-dark">
@@ -305,7 +305,7 @@
                 </div>
             </div>
 
-            <!-- DANGER TAB -->
+            <!-- PESTAÑA PELIGRO -->
             <div class="tab-pane fade" id="danger" role="tabpanel">
                 <div class="card border-danger">
                     <div class="card-header bg-danger text-white">
@@ -327,7 +327,7 @@
 
     {% block scripts %}
     <script>
-        // Load User Docs on Start
+        // Cargar Docs de Usuario al Inicio
         document.addEventListener('DOMContentLoaded', function () {
             fetch('/api/settings/user_docs')
                 .then(r => r.json())
@@ -378,7 +378,7 @@
         function saveConfig() {
             const content = document.getElementById('json-editor').value;
             try {
-                const json = JSON.parse(content); // Validate JSON
+                const json = JSON.parse(content); // Validar JSON
                 fetch('/api/config/save', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -409,7 +409,7 @@
                         window.notify("Configuración Actualizada", "Función experimental modificada.", "info");
                     } else {
                         window.notify("Error", "Error actualizando configuración.", "danger");
-                        // Revert checkbox if failed
+                        // Revertir el checkbox si falló
                         document.getElementById('exp_voice_auth').checked = !enabled;
                     }
                 });

@@ -1,4 +1,4 @@
-# 🍊 TangerineUI (Formerly web_client)
+#  TangerineUI (Formerly web_client)
 
 **The Face of WatermelonD.**
 

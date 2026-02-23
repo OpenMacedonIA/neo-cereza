@@ -257,7 +257,7 @@
         <p>Gestionar agentes satélite BerryConnect</p>
     </div>
 
-    <!-- Broker Info -->
+    <!-- Información del Broker -->
     <div class="broker-info">
         <h3><i class="fas fa-info-circle"></i> MQTT Broker Information</h3>
         <div id="broker-info-content">
@@ -268,7 +268,7 @@
         </button>
     </div>
 
-    <!-- Agents List -->
+    <!-- Lista de Agentes -->
     <div class="section-card">
         <h2>Connected Agents</h2>
         <div id="agents-container">
@@ -284,7 +284,7 @@
         </div>
     </div>
 
-    <!-- Instructions -->
+    <!-- Instrucciones -->
     <div class="section-card">
         <h2><i class="fas fa-book"></i> Setup Instructions</h2>
         <ol>
@@ -364,7 +364,7 @@
             const container = document.getElementById('agents-container');
 
             if (Object.keys(agents).length === 0) {
-                return; // Keep empty state
+                return; // Mantener estado vacío
             }
 
             container.innerHTML = Object.entries(agents).map(([id, agent]) => {
@@ -386,7 +386,7 @@
                         ${data.ip ? `<p><strong>IP:</strong> <code>${data.ip}</code></p>` : ''}
                         ${data.uptime_seconds ? `<p><strong>Uptime:</strong> ${formatUptime(data.uptime_seconds)}</p>` : ''}
                         
-                        <!-- Control Buttons -->
+                        <!-- Botones de Control -->
                         <div class="control-buttons">
                             <button class="btn-control ping" onclick="sendCommand('${id}', 'ping')">
                                 <i class="fas fa-bell"></i> Ping
@@ -405,7 +405,7 @@
                             </button>
                         </div>
                         
-                        <!-- Telemetry Grid -->
+                        <!-- Cuadrícula de Telemetría -->
                         <div class="telemetry-grid">
                             ${data.cpu_percent !== undefined ? `
                             <div class="telemetry-item">
@@ -445,7 +445,7 @@
                             ` : ''}
                         </div>
                         
-                        <!-- Sensors Section -->
+                        <!-- Sección de Sensores -->
                         ${Object.keys(sensors).length > 0 ? `
                         <div class="sensor-section">
                             <h4 class="collapsible" onclick="toggleSection('sensors-${id}')">
@@ -569,11 +569,11 @@
         }
     }
 
-    // Load data on page load
+    // Cargar datos al cargar la página
     loadBrokerInfo();
     loadAgents();
 
-    // Auto-refresh every 10 seconds
+    // Auto-refrescar cada 10 segundos
     setInterval(loadAgents, 10000);
 </script>
 {% endblock %}

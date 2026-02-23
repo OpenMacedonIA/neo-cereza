@@ -4,34 +4,34 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
-app.secret_key = os.urandom(24) # Random key for client session
+app.secret_key = os.urandom(24) # Clave aleatoria para la sesión del cliente
 
 @app.context_processor
 def inject_socket_url():
     return dict(socket_url=NEO_API_URL)
 
-# Initialize CSRF Protection
+# Inicializar Protección CSRF
 csrf = CSRFProtect(app)
 
-# Configuration
-# Default to localhost if not set, but Configurator should set this.
+# Configuración
+# Por defecto a localhost si no está configurado, pero el Configurator debería establecer esto.
 NEO_API_URL = os.environ.get('NEO_API_URL', 'http://localhost:5000')
 
-# Ensure URL has schema
+# Asegurar que la URL tenga el esquema
 if not NEO_API_URL.startswith(('http://', 'https://')):
     NEO_API_URL = f"http://{NEO_API_URL}"
 
-# Remove trailing slash to avoid double slashes in paths
+# Eliminar barra diagonal final para evitar barras dobles en rutas
 NEO_API_URL = NEO_API_URL.rstrip('/')
 
 def get_headers():
-    """Headers for API requests (simulate login or pass API Key)."""
-    # For now, we rely on the Server being open or sharing a session cookie concept if complex.
-    # But NeoCore uses session['logged_in']. 
-    # HEADLESS AUTH STRATEGY:
-    # 1. Login on Client -> Client calls Server /login API?
-    # 2. Or Client stores a Token?
-    # Current NeoCore uses session cookie. We need to proxy that.
+    """Cabeceras para peticiones API (simula inicio de sesión o pasa API Key)."""
+    # Por ahora, dependemos de que el Servidor esté abierto o compartiremos un concepto de cookie de sesión si es complejo.
+    # Pero NeoCore usa session['logged_in']. 
+    # ESTRATEGIA DE AUTENTICACIÓN HEADLESS:
+    # 1. Login en Cliente -> Cliente llama a Servidor /login API?
+    # 2. ¿O el Cliente almacena un Token?
+    # El NeoCore actual usa cookie de sesión. Necesitamos hacer proxy a eso.
     
     cookies = {}
     if 'neo_session' in session:
@@ -51,22 +51,22 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        # Proxy Login to Server
+        # Proxy Login al Servidor
         try:
-            # We hit the login form endpoint of server? No, server expects session.
-            # We actually need an API /login which returns a cookie or token.
-            # NeoCore currently uses a standard form login.
-            # Let's try to POST to /login on server and capture the cookie.
-            # Disable warnings for self-signed certs
+            # ¿Afectamos al endpoint del formulario de inicio de sesión del servidor? No, el servidor espera la sesión.
+            # En realidad necesitamos una API /login que devuelva una cookie o token.
+            # NeoCore actualmente usa un inicio de sesión de formulario estándar.
+            # Intentemos hacer POST a /login en el servidor y capturar la cookie.
+            # Desactivar advertencias para certificados autofirmados
             import urllib3
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
             
             resp = requests.post(f"{NEO_API_URL}/login", data={'username': username, 'password': password}, allow_redirects=False, verify=False)
             
             if resp.status_code == 302 and 'dashboard' in resp.headers['Location']:
-                # Success
+                # Éxito
                 session['logged_in'] = True
-                session['neo_session'] = resp.cookies.get('session') # Store server session cookie
+                session['neo_session'] = resp.cookies.get('session') # Almacenar cookie de sesión del servidor
                 return redirect(url_for('dashboard'))
             else:
                 error = "Login fallido en servidor NeoCore."
@@ -80,8 +80,8 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- Proxy Views ---
-# These views render local templates but fetch data from Server API
+# --- Vistas Proxy ---
+# Estas vistas renderizan plantillas locales pero obtienen datos de la API del Servidor
 
 @app.route('/dashboard')
 def dashboard():
@@ -125,7 +125,7 @@ def speech():
 
 @app.route('/settings')
 def settings():
-    # Fetch content from API
+    # Obtener contenido de la API
     try:
         headers, cookies = get_headers()
         resp = requests.get(f"{NEO_API_URL}/api/config/get", cookies=cookies, verify=False)
@@ -157,7 +157,7 @@ def skills():
 
 @app.route('/training')
 def training():
-    # Training usually needs config too for TTS/STT options logic
+    # Training normalmente necesita configuración también para la lógica de las opciones TTS/STT
     try:
         headers, cookies = get_headers()
         resp = requests.get(f"{NEO_API_URL}/api/config/get", cookies=cookies, verify=False)
@@ -171,7 +171,7 @@ def face():
     return render_template('face.html')
 
 # --- API PROXY ---
-# Forward all /api/* requests to NeoCore
+# Reenviar todas las peticiones /api/* a NeoCore
 @app.route('/api/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def api_proxy(path):
     headers, cookies = get_headers()
@@ -181,13 +181,13 @@ def api_proxy(path):
         if request.method == 'GET':
             resp = requests.get(url, params=request.args, cookies=cookies, verify=False)
         elif request.method == 'POST':
-            # Forward JSON or Form data
+            # Reenviar datos JSON o Formulario
             if request.is_json:
                 resp = requests.post(url, json=request.json, cookies=cookies, verify=False)
             else:
                 resp = requests.post(url, data=request.form, files=request.files, cookies=cookies, verify=False)
         
-        # Check if response is json
+        # Comprobar si la respuesta es json
         try:
             return jsonify(resp.json()), resp.status_code
         except:

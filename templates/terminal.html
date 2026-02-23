@@ -33,17 +33,17 @@
     let historyIndex = -1;
     let currentCwd = "~";
 
-    // ANSI Color Parsing
+    // Análisis de Color ANSI
     function ansiToHtml(text) {
         if (!text) return '';
-        // Basic ANSI color mapping
+        // Mapeo básico de color ANSI
         const colors = {
             '30': 'black', '31': '#ff5555', '32': '#50fa7b', '33': '#f1fa8c',
             '34': '#bd93f9', '35': '#ff79c6', '36': '#8be9fd', '37': 'white',
             '0': 'inherit', '1': 'bold'
         };
 
-        // Remove unsupported codes and replace colors
+        // Eliminar códigos no soportados y reemplazar colores
         return text.replace(/\033\[([0-9;]+)m/g, (match, codes) => {
             const style = [];
             codes.split(';').forEach(code => {
@@ -53,12 +53,12 @@
                 }
             });
             return style.length ? `<span style="${style.join(';')}">` : '</span>';
-        }) + '</span>'; // Close any open spans (simplified)
+        }) + '</span>'; // Cerrar cualquier span abierto (simplificado)
     }
 
-    // Update Prompt
+    // Actualizar Prompt
     function updatePrompt(cwd) {
-        // Shorten home dir
+        // Acortar directorio de inicio
         if (cwd.startsWith('/home/')) {
             const parts = cwd.split('/');
             if (parts.length >= 3) {
@@ -73,16 +73,16 @@
             const cmd = input.value;
             if (!cmd) return;
 
-            // History
+            // Historial
             commandHistory.push(cmd);
             historyIndex = commandHistory.length;
 
-            // Append command to output
+            // Añadir comando a la salida
             const promptText = promptSpan.innerText;
             output.innerHTML += `\n<span style="color: #0f0">${promptText}</span> ${cmd}\n`;
             input.value = '';
 
-            // Auto scroll
+            // Autodesplazamiento
             output.scrollTop = output.scrollHeight;
 
             fetch('/api/terminal', {

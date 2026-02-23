@@ -18,7 +18,7 @@
             </div>
         </div>
 
-        <!-- Tabs -->
+        <!-- Pestañas -->
         <ul class="nav nav-tabs card-header-tabs">
             <li class="nav-item">
                 <a class="nav-link active" href="#" onclick="setFilter('ALL', this)">All</a>
@@ -58,7 +58,7 @@
     let currentFilter = 'ALL';
     const viewer = document.getElementById('log-viewer');
 
-    // Detect manual scroll to disable auto-scroll
+    // Detectar desplazamiento manual para deshabilitar autodesplazamiento
     viewer.addEventListener('scroll', () => {
         const isAtBottom = viewer.scrollHeight - viewer.scrollTop <= viewer.clientHeight + 50;
         isAutoScroll = isAtBottom;
@@ -67,7 +67,7 @@
     function setFilter(filter, element) {
         currentFilter = filter;
 
-        // Update active tab
+        // Actualizar pestaña activa
         document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
         element.classList.add('active');
 
@@ -91,10 +91,10 @@
                 const searchTerm = document.getElementById('log-search').value.toLowerCase();
                 let lines = data.logs.split('\n');
 
-                // Filter by Tab
+                // Filtrar por pestaña
                 if (currentFilter !== 'ALL') {
                     if (currentFilter === 'SYSTEM') {
-                        // System logs might not have a tag, or we exclude known tags
+                        // Los logs del sistema pueden no tener una etiqueta, o excluimos etiquetas conocidas
                         const knownTags = ['[AUDIO]', '[STT]', '[NLU]', '[SKILLS]', '[WEB]'];
                         lines = lines.filter(line => !knownTags.some(tag => line.includes(tag)));
                     } else {
@@ -103,14 +103,14 @@
                     }
                 }
 
-                // Filter by Search
+                // Filtrar por búsqueda
                 if (searchTerm) {
                     lines = lines.filter(line => line.toLowerCase().includes(searchTerm));
                 }
 
                 const coloredContent = lines.map(line => colorizeLog(line)).join('\n');
 
-                // Only update if content changed to avoid cursor jumping
+                // Solo actualizar si el contenido cambió para evitar el salto del cursor
                 if (viewer.innerHTML !== coloredContent) {
                     viewer.innerHTML = coloredContent;
 
@@ -122,7 +122,7 @@
     }
 
     function filterLogs() {
-        // Trigger immediate update when typing
+        // Activar actualización inmediata al escribir
         updateLogs();
     }
 

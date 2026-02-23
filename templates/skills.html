@@ -9,7 +9,7 @@
 </div>
 
 <div class="row" id="skills-container">
-    <!-- Skills will be loaded here -->
+    <!-- Las habilidades se cargarán aquí -->
     <div class="col-12 text-center py-5">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Cargando...</span>
@@ -17,7 +17,7 @@
     </div>
 </div>
 
-<!-- Config Modal -->
+<!-- Modal de Configuración -->
 <div class="modal fade" id="configModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark text-light border-secondary">
@@ -26,14 +26,14 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- Toggle -->
+                <!-- Interruptor -->
                 <div class="d-flex justify-content-end mb-3">
                     <button class="btn btn-sm btn-outline-warning" id="modeToggleBtn" onclick="toggleEditMode()">
                         <i class="fas fa-code"></i> Modo Avanzado
                     </button>
                 </div>
 
-                <!-- Simple Editor -->
+                <!-- Editor Simple -->
                 <div id="simpleEditor">
                     <div id="aliasesContainer" class="mb-3" style="display: none;">
                         <label class="form-label text-info">Aliases (Nombres Personalizados)</label>
@@ -48,7 +48,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="aliasesTableBody">
-                                    <!-- Dynamic -->
+                                    <!-- Dinámico -->
                                 </tbody>
                             </table>
                         </div>
@@ -72,7 +72,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="serversTableBody">
-                                    <!-- Dynamic -->
+                                    <!-- Dinámico -->
                                 </tbody>
                             </table>
                         </div>
@@ -105,7 +105,7 @@
                         <div class="mb-3">
                             <label class="form-label">Rutas a Escanear</label>
                             <div id="scanPathsList" class="mb-2">
-                                <!-- Dynamic paths -->
+                                <!-- Rutas dinámicas -->
                             </div>
                             <div class="input-group">
                                 <input type="text" class="form-control bg-dark text-light border-secondary"
@@ -128,7 +128,7 @@
                     </div>
                 </div>
 
-                <!-- Advanced Editor -->
+                <!-- Editor Avanzado -->
                 <div id="advancedEditor" style="display: none;">
                     <p class="text-muted">Edita el JSON directamente. Cuidado con la sintaxis.</p>
                     <textarea id="configEditor" class="form-control bg-black text-success text-mono border-0 p-3"
@@ -198,11 +198,11 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Reload to update UI state (colors, etc)
+                    // Recargar para actualizar el estado de la UI (colores, etc.)
                     loadSkills();
                 } else {
                     alert('Error al cambiar estado: ' + data.message);
-                    // Revert switch if failed
+                    // Revertir el interruptor si falló
                     document.getElementById(`toggle-${name}`).checked = !enabled;
                 }
             });
@@ -216,14 +216,14 @@
         currentSkill = name;
         document.getElementById('modalSkillName').innerText = name;
 
-        // Populate JSON Editor
+        // Rellenar Editor JSON
         document.getElementById('configEditor').value = JSON.stringify(config, null, 4);
 
-        // Reset Mode
+        // Restablecer Modo
         isAdvancedMode = false;
         updateEditorVisibility();
 
-        // Populate Simple Editor
+        // Rellenar Editor Simple
         loadSimpleEditor(config);
 
         new bootstrap.Modal(document.getElementById('configModal')).show();
@@ -231,13 +231,13 @@
 
     function toggleEditMode() {
         if (!isAdvancedMode) {
-            // Switching to Advanced
-            // Sync Simple -> JSON (Optional, if we want changes to persist)
-            // For now, we assume Simple is the source of truth if active
+            // Cambiando a Avanzado
+            // Sincronizar Simple -> JSON (Opcional, si queremos que los cambios persistan)
+            // Por ahora, asumimos que Simple es la fuente de la verdad si está activo
             syncSimpleToAdvanced();
         } else {
-            // Switching to Simple
-            // Try to parse JSON -> Simple
+            // Cambiando a Simple
+            // Intentar analizar JSON -> Simple
             if (!syncAdvancedToSimple()) return; // Cancel if invalid JSON
         }
         isAdvancedMode = !isAdvancedMode;
@@ -262,7 +262,7 @@
         }
     }
 
-    // --- Simple Editor Logic ---
+    // --- Lógica del Editor Simple ---
 
     function loadSimpleEditor(config) {
         const aliasesContainer = document.getElementById('aliasesContainer');
@@ -270,7 +270,7 @@
         const filesConfigContainer = document.getElementById('filesConfigContainer');
         const noSimple = document.getElementById('noSimpleConfig');
 
-        // Reset
+        // Restablecer
         aliasesContainer.style.display = 'none';
         serversContainer.style.display = 'none';
         filesConfigContainer.style.display = 'none';
@@ -278,7 +278,7 @@
 
         let hasSimple = false;
 
-        // Check for 'aliases'
+        // Comprobar 'aliases'
         if (config && config.aliases) {
             hasSimple = true;
             aliasesContainer.style.display = 'block';
@@ -289,7 +289,7 @@
             });
         }
 
-        // Check for 'servers' (SSH)
+        // Comprobar 'servers' (SSH)
         if (config && config.servers && Array.isArray(config.servers)) {
             hasSimple = true;
             serversContainer.style.display = 'block';
@@ -300,7 +300,7 @@
             });
         }
 
-        // Check for 'scan_paths' (Files)
+        // Comprobar 'scan_paths' (Archivos)
         if (config && config.scan_paths) {
             hasSimple = true;
             filesConfigContainer.style.display = 'block';
@@ -372,9 +372,9 @@
 
     function triggerScanNow() {
         if (confirm("¿Guardar configuración e iniciar escaneo?")) {
-            saveSkillConfig(); // Save first
+            saveSkillConfig(); // Guardar primero
 
-            // Wait a bit for save to propagate
+            // Esperar un poco a que se propague el guardado
             setTimeout(() => {
                 fetch('/api/skills/scan_files', { method: 'POST' })
                     .then(res => res.json())
@@ -386,11 +386,11 @@
     }
 
     function syncSimpleToAdvanced() {
-        // Read inputs and update JSON textarea
+        // Leer entradas y actualizar el área de texto JSON
         try {
             const currentJSON = JSON.parse(document.getElementById('configEditor').value || '{}');
 
-            // Sync Aliases
+            // Sincronizar Aliases
             if (document.getElementById('aliasesContainer').style.display !== 'none') {
                 const newAliases = {};
                 document.querySelectorAll('#aliasesTableBody tr').forEach(row => {
@@ -401,7 +401,7 @@
                 currentJSON.aliases = newAliases;
             }
 
-            // Sync Servers
+            // Sincronizar Servidores
             if (document.getElementById('serversContainer').style.display !== 'none') {
                 const newServers = [];
                 document.querySelectorAll('#serversTableBody tr').forEach(row => {
@@ -424,7 +424,7 @@
                 currentJSON.servers = newServers;
             }
 
-            // Sync Files Config
+            // Sincronizar Configuración de Archivos
             if (document.getElementById('filesConfigContainer').style.display !== 'none') {
                 currentJSON.enable_indexing = document.getElementById('enableIndexing').checked;
                 currentJSON.scan_interval = parseInt(document.getElementById('scanInterval').value);
@@ -455,7 +455,7 @@
     }
 
     function saveSkillConfig() {
-        // Ensure we have the latest data in JSON format
+        // Asegurar que tenemos los últimos datos en formato JSON
         if (!isAdvancedMode) {
             syncSimpleToAdvanced();
         }
@@ -483,7 +483,7 @@
         }
     }
 
-    // Load on start
+    // Cargar al inicio
     loadSkills();
 </script>
 {% endblock %}

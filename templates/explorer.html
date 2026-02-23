@@ -2,19 +2,20 @@
 
 {% block content %}
 <div class="explorer-container">
-    <!-- File Tree -->
+    <!-- Árbol de Archivos -->
     <div class="card file-tree-card">
         <div class="card-header pb-2">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h3 class="m-0">Explorador</h3>
                 <span class="badge bg-secondary" id="item-count">0 items</span>
             </div>
-            <input type="text" id="file-search" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="Buscar archivo...">
+            <input type="text" id="file-search" class="form-control form-control-sm bg-dark text-light border-secondary"
+                placeholder="Buscar archivo...">
             <div class="breadcrumb mt-2 text-muted text-truncate" id="breadcrumb">/</div>
         </div>
         <div class="card-body p-0 overflow-auto">
             <ul id="file-list" class="file-list m-0 p-0">
-                <!-- Files loaded here -->
+                <!-- Los archivos se cargan aquí -->
             </ul>
         </div>
     </div>
@@ -39,19 +40,20 @@
         height: calc(100vh - 140px);
         gap: 20px;
     }
-    
+
     .file-tree-card {
         width: 30%;
         display: flex;
         flex-direction: column;
         min-width: 250px;
     }
-    
+
     .editor-card {
         flex: 1;
         display: flex;
         flex-direction: column;
-        min-width: 0; /* Fix flex overflow */
+        min-width: 0;
+        /* Solucionar desbordamiento de flex */
     }
 
     #file-editor {
@@ -70,7 +72,7 @@
     .file-item {
         padding: 10px 15px;
         cursor: pointer;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         display: flex;
         align-items: center;
         gap: 10px;
@@ -79,7 +81,7 @@
     }
 
     .file-item:hover {
-        background: rgba(255,255,255,0.05);
+        background: rgba(255, 255, 255, 0.05);
     }
 
     .file-item.active {
@@ -99,10 +101,12 @@
             flex-direction: column;
             height: auto;
         }
+
         .file-tree-card {
             width: 100%;
             height: 300px;
         }
+
         .editor-card {
             width: 100%;
             height: 500px;
@@ -117,7 +121,7 @@
     let currentFile = null;
     let allItems = [];
 
-    // Search functionality
+    // Funcionalidad de búsqueda
     document.getElementById('file-search').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = allItems.filter(item => item.name.toLowerCase().includes(query));
@@ -134,9 +138,9 @@
             .then(data => {
                 if (data.success) {
                     currentPath = path;
-                    allItems = data.items; // Store for search
+                    allItems = data.items; // Almacenar para búsqueda
                     updateBreadcrumb();
-                    document.getElementById('file-search').value = ''; // Reset search
+                    document.getElementById('file-search').value = ''; // Reiniciar búsqueda
                     renderFileList(data.items);
                 } else {
                     alert('Error: ' + data.message);
@@ -145,7 +149,7 @@
     }
 
     function renderFileList(items) {
-        // Just a wrapper to set allItems if called directly, basically handles ".." insertion
+        // Solo un contenedor para establecer allItems si se llama directamente, básicamente maneja la inserción de ".."
         renderList(items);
     }
 
@@ -154,9 +158,9 @@
         list.innerHTML = '';
         document.getElementById('item-count').innerText = `${items.length} items`;
 
-        // Add ".." if not root and we are not filtering deeply (only show .. if showing full list logic? keeping it simple)
+        // Añadir ".." si no es la raíz y no estamos filtrando profundamente (¿solo mostrar .. si se muestra la lógica de lista completa? manteniéndolo simple)
         const isSearching = document.getElementById('file-search').value.length > 0;
-        
+
         if (currentPath !== '/' && !isSearching) {
             const li = document.createElement('li');
             li.className = 'file-item text-secondary';
@@ -225,7 +229,7 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    // Minimal feedback animation could go here
+                    // Aquí podría ir una animación de respuesta mínima
                     const btn = document.getElementById('save-btn');
                     const originalText = btn.innerHTML;
                     btn.innerHTML = '<i class="fas fa-check"></i> Guardado';
@@ -236,7 +240,7 @@
             });
     }
 
-    // Initial load
+    // Carga inicial
     loadDirectory(currentPath);
 </script>
 {% endblock %}

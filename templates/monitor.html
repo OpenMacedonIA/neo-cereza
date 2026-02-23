@@ -32,7 +32,7 @@
     </div>
     <div class="card-body">
         <div class="tab-content">
-            <!-- PROCESSES TAB -->
+            <!-- PESTAÑA PROCESOS -->
             <div class="tab-pane fade show active" id="processes">
                 <div class="d-flex justify-content-end mb-2">
                     <button class="btn btn-sm btn-primary" onclick="loadProcesses()">
@@ -59,7 +59,7 @@
                 </div>
             </div>
 
-            <!-- LOGS TAB -->
+            <!-- PESTAÑA LOGS -->
             <div class="tab-pane fade" id="logs">
                 <div class="d-flex gap-2 mb-3">
                     <select class="form-select w-auto" id="log-file-select" onchange="loadLogFile()">
@@ -82,7 +82,7 @@
 
 {% block scripts %}
 <script>
-    // --- CHARTS ---
+    // --- GRÁFICOS ---
     const ctx = document.getElementById('resourcesChart').getContext('2d');
     const resourcesChart = new Chart(ctx, {
         type: 'line',
@@ -139,7 +139,7 @@
     }
     setInterval(updateChart, 2000);
 
-    // --- PROCESSES ---
+    // --- PROCESOS ---
     function loadProcesses() {
         fetch('/api/monitor/processes')
             .then(res => res.json())
@@ -182,8 +182,8 @@
             });
     }
 
-    // Init
+    // Iniciar
     loadProcesses();
-    setInterval(loadProcesses, 5000); // Auto refresh processes
+    setInterval(loadProcesses, 5000); // Refresco automático de procesos
 </script>
 {% endblock %}

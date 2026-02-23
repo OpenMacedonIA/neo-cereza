@@ -19,11 +19,11 @@
     <style>
         :root,
         [data-bs-theme="dark"] {
-            /* DEEP SLATE THEME (Matches Face UI) */
+            /* TEMA DEEP SLATE (Coincide con Face UI) */
             --bg-body: #0b0f19;
             --bg-sidebar: #0f121a;
             --bg-card: rgba(17, 24, 39, 0.85);
-            /* Panel Slate with blur */
+            /* Pizarra del panel con desenfoque */
             --bg-hover: rgba(255, 255, 255, 0.05);
 
             --primary: #38bdf8;
@@ -44,7 +44,7 @@
 
             --sidebar-width: 280px;
 
-            /* BOOTSTRAP OVERRIDES */
+            /* MODIFICACIONES DE BOOTSTRAP */
             --bs-body-bg: var(--bg-body);
             --bs-body-color: var(--text-main);
             --bs-primary: #38bdf8;
@@ -62,7 +62,7 @@
         }
 
         [data-theme="light"] {
-            /* LIGHT THEME (Soft Grey/Blue) */
+            /* TEMA CLARO (Gris suave/Azul) */
             --bg-body: #f1f5f9;
             --bg-sidebar: #ffffff;
             --bg-card: rgba(255, 255, 255, 0.9);
@@ -178,7 +178,7 @@
             color: var(--accent);
         }
 
-        /* Main Content */
+        /* Contenido Principal */
         .main-content {
             margin-left: var(--sidebar-width);
             padding: 2rem;
@@ -186,7 +186,7 @@
             transition: margin-left 0.3s;
         }
 
-        /* Cards & Components */
+        /* Tarjetas y Componentes */
         .card-header {
             background-color: rgba(255, 255, 255, 0.02);
             border-bottom: 1px solid var(--border);
@@ -206,7 +206,7 @@
             transform: translateY(-1px);
         }
 
-        /* Forms */
+        /* Formularios */
         .form-control,
         .form-select {
             background-color: rgba(0, 0, 0, 0.2);
@@ -233,7 +233,7 @@
             color: #1e293b;
         }
 
-        /* Tables & Lists */
+        /* Tablas y Listas */
         .table {
             color: var(--text-main);
         }
@@ -243,7 +243,7 @@
             background-color: var(--bg-hover);
         }
 
-        /* Touch-Friendly Optimizations */
+        /* Optimizaciones para pantallas táctiles */
         button,
         .btn,
         .btn-primary,
@@ -281,7 +281,7 @@
             align-items: center;
         }
 
-        /* Better touch feedback */
+        /* Mejor respuesta háptica */
         button:active,
         .btn:active {
             transform: scale(0.98);
@@ -317,13 +317,13 @@
 
 <body>
 
-    <!-- Mobile Toggle -->
+    <!-- Interruptor para móviles -->
     <button class="btn btn-dark d-md-none position-fixed top-0 start-0 m-3 z-3"
         onclick="document.querySelector('.sidebar').classList.toggle('show')">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar -->
+    <!-- Barra lateral -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <i class="fas fa-robot fa-lg text-primary"></i>
@@ -363,7 +363,7 @@
             <a href="{{ url_for('explorer') }}" class="nav-link {% if page == 'explorer' %}active{% endif %}">
                 <i class="fas fa-folder-open"></i> Archivos
             </a>
-            <!-- Knowledge panel hidden temporarily
+            <!-- Panel de conocimiento oculto temporalmente
             <a href="{{ url_for('knowledge') }}" class="nav-link {% if page == 'knowledge' %}active{% endif %}">
                 <i class="fas fa-brain"></i> Conocimiento
             </a>
@@ -394,14 +394,14 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
+    <!-- Contenido Principal -->
     <main class="main-content">
         <div class="container-fluid">
-            <!-- Header -->
+            <!-- Cabecera -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="h3 mb-0">{{ page|capitalize }}</h2>
                 <div class="d-flex align-items-center gap-3">
-                    <!-- Audio Status Indicator -->
+                    <!-- Indicador de Estado de Audio -->
                     {% if not audio_status.output %}
                     <span class="badge bg-danger rounded-pill" title="Audio Salida Desactivado">
                         <i class="fas fa-volume-mute"></i>
@@ -434,12 +434,12 @@
                 </div>
             </div>
 
-            <!-- Page Content -->
+            <!-- Contenido de la Página -->
             {% block content %}{% endblock %}
         </div>
     </main>
 
-    <!-- Connection Overlay -->
+    <!-- Capa superpuesta de conexión -->
     <div id="connection-overlay"
         class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center"
         style="background: rgba(5, 5, 9, 0.9); z-index: 9999; backdrop-filter: blur(10px);">
@@ -450,7 +450,7 @@
         <p class="text-muted" id="overlay-msg">El sistema se está actualizando o reiniciando.</p>
     </div>
 
-    <!-- Toast Container -->
+    <!-- Contenedor de notificaciones Toast -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container" style="z-index: 1100;"></div>
 
     <!-- Scripts -->
@@ -459,17 +459,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script>
-        // Setup CSRF for all AJAX requests
+        // Configurar CSRF para todas las peticiones AJAX
         document.addEventListener('DOMContentLoaded', () => {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            // Inject CSRF into Fetch API
+            // Inyectar CSRF en la API Fetch
             const originalFetch = window.fetch;
             window.fetch = async (input, init) => {
                 init = init || {};
                 init.headers = init.headers || {};
 
-                // Add CSRF header if method is not GET/HEAD/OPTIONS
+                // Añadir cabecera CSRF si el método no es GET/HEAD/OPTIONS
                 const method = init.method ? init.method.toUpperCase() : 'GET';
                 if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
                     if (init.headers instanceof Headers) {
@@ -481,18 +481,18 @@
                 return originalFetch(input, init);
             };
 
-            // Init Theme
+            // Iniciar Tema
             const storedTheme = localStorage.getItem('neo-theme') || 'dark';
             setTheme(storedTheme);
 
-            // Request Notification Permission
+            // Solicitar Permiso de Notificación
             if ("Notification" in window) {
                 if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                     Notification.requestPermission();
                 }
             }
 
-            // Start Connection Monitor
+            // Iniciar Monitor de Conexión
             monitorConnection();
         });
 
@@ -515,9 +515,9 @@
             }
         }
 
-        // --- Notification System ---
+        // --- Sistema de Notificaciones ---
         function notify(title, message, type = 'info') {
-            // Types: info, success, warning, danger
+            // Tipos: info, success, warning, danger
             const iconMap = {
                 'info': 'fas fa-info-circle',
                 'success': 'fas fa-check-circle',
@@ -531,7 +531,7 @@
                 'danger': 'text-danger'
             };
 
-            // 1. In-App Toast
+            // 1. Toast de la aplicación
             const toastId = 'toast-' + Date.now();
             const toastHtml = `
                 <div id="${toastId}" class="toast align-items-center text-bg-dark border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
@@ -559,22 +559,22 @@
                 toastEl.remove();
             });
 
-            // 2. Browser Native Notification
+            // 2. Notificación Nativa del Navegador
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(title, {
                     body: message,
-                    icon: '/static/favicon.ico' // Assuming favicon exists or generic
+                    icon: '/static/favicon.ico' // Asumiendo que el favicon existe o es genérico
                 });
             }
         }
 
-        // --- Connection Monitor ---
+        // --- Monitor de Conexión ---
         let isOffline = false;
 
         function monitorConnection() {
             setInterval(() => {
-                // We poll the health endpoint. Currently we don't have a dedicated one, so we use /login or root or a simple fetch.
-                // Best to use a very lightweight endpoint. /api/audio/status is light.
+                // Hacemos polling al endpoint de salud. Actualmente no tenemos uno dedicado, así que usamos /login o raíz o un fetch simple.
+                // Mejor usar un endpoint muy ligero. /api/audio/status es ligero.
                 fetch('/api/audio/status')
                     .then(res => {
                         if (res.ok) {
@@ -582,7 +582,7 @@
                                 isOffline = false;
                                 document.getElementById('connection-overlay').classList.add('d-none');
                                 notify("Sistema Online", "Conexión con WatermelonD restablecida.", "success");
-                                // Optional logic to reload if state is stale, but preserving state nicely is better.
+                                // Lógica opcional para recargar si el estado es obsoleto, pero preservar el estado elegantemente es mejor.
                                 // location.reload(); 
                             }
                         } else {
@@ -593,19 +593,19 @@
                         if (!isOffline) {
                             isOffline = true;
                             document.getElementById('connection-overlay').classList.remove('d-none');
-                            // No notification here because user probably sees the overlay or is away. 
-                            // Notification might be annoying if it pops up when system actually dies.
+                            // No notificamos aquí porque el usuario probablemente vea la superposición o esté ausente. 
+                            // La notificación podría ser molesta si aparece cuando el sistema realmente muere.
                         }
                     });
-            }, 3000); // Check every 3 seconds
+            }, 3000); // Comprobar cada 3 segundos
         }
 
-        // Expose to window for other scripts
+        // Exponer a la ventana para otros scripts
         window.notify = notify;
     </script>
 
     <script>
-        // Global Socket.IO connection with improved reconnection
+        // Conexión Global Socket.IO con reconexión mejorada
         const socketUrl = "{{ socket_url }}" || undefined;
         const socket = io(socketUrl, {
             reconnection: true,
@@ -619,9 +619,9 @@
         let connectionState = 'disconnected';
 
         socket.on('connect', () => {
-            console.log('✅ Connected to WebSocket');
+            console.log(' Connected to WebSocket');
             connectionState = 'connected';
-            // Remove any "disconnected" indicators
+            // Eliminar cualquier indicador "desconectado"
             document.querySelectorAll('.connection-indicator').forEach(el => {
                 el.classList.remove('disconnected');
                 el.classList.add('connected');
@@ -629,59 +629,59 @@
         });
 
         socket.on('disconnect', (reason) => {
-            console.warn('⚠️ Disconnected from WebSocket:', reason);
+            console.warn(' Disconnected from WebSocket:', reason);
             connectionState = 'disconnected';
             document.querySelectorAll('.connection-indicator').forEach(el => {
                 el.classList.remove('connected');
                 el.classList.add('disconnected');
             });
 
-            // Auto-reconnect if server initiated disconnect
+            // Auto-reconectar si el servidor inició la desconexión
             if (reason === 'io server disconnect') {
                 socket.connect();
             }
         });
 
         socket.on('connect_error', (error) => {
-            console.error('❌ Connection error:', error);
+            console.error(' Connection error:', error);
         });
 
         socket.on('reconnect', (attemptNumber) => {
-            console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+            console.log(' Reconnected after', attemptNumber, 'attempts');
             notify("Conexión", "Reconectado al servidor", "success");
         });
 
         socket.on('reconnect_attempt', () => {
-            console.log('🔄 Attempting to reconnect...');
+            console.log(' Attempting to reconnect...');
         });
 
         socket.on('reconnect_error', (error) => {
-            console.error('❌ Reconnection error:', error);
+            console.error(' Reconnection error:', error);
         });
 
         socket.on('reconnect_failed', () => {
-            console.error('❌ Failed to reconnect');
+            console.error(' Failed to reconnect');
             notify("Error", "No se pudo reconectar al servidor", "error");
         });
 
 
-        // Feedback Listeners
+        // Listeners de Feedback
         socket.on('stt:result', (data) => {
-            // Visual feedback for recognized speech
+            // Feedback visual para el habla reconocida
             if (data && data.text) {
                 notify("Escuchando...", data.text, "info");
             }
         });
 
         socket.on('ai:response', (data) => {
-            // Visual feedback for AI response
+            // Feedback visual para respuesta de IA
             if (data && data.text) {
                 notify("Neo", data.text, "success");
             }
         });
     </script>
 
-    <!-- Fix closing tags -->
+    <!-- Arreglar etiquetas de cierre -->
     {% block scripts %}{% endblock %}
 </body>
 

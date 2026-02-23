@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- System Status / DnD Grid -->
+<!-- Cuadrícula de Estado del Sistema / DnD -->
 <div class="row g-4 mb-4" id="dashboard-grid">
-    <!-- CPU Temp -->
+    <!-- Temp de CPU -->
     <div class="col-md-3" data-id="widget-cpu-temp">
         <div class="card h-100 border-primary border-opacity-25 shadow-sm widget-card">
             <div class="card-body d-flex align-items-center">
@@ -21,7 +21,7 @@
         </div>
     </div>
 
-    <!-- CPU Usage -->
+    <!-- Uso de CPU -->
     <div class="col-md-3" data-id="widget-cpu-usage">
         <div class="card h-100 border-info border-opacity-25 shadow-sm widget-card">
             <div class="card-body d-flex align-items-center">
@@ -39,7 +39,7 @@
         </div>
     </div>
 
-    <!-- RAM Usage -->
+    <!-- Uso de RAM -->
     <div class="col-md-3" data-id="widget-ram-usage">
         <div class="card h-100 border-warning border-opacity-25 shadow-sm widget-card">
             <div class="card-body d-flex align-items-center">
@@ -57,7 +57,7 @@
         </div>
     </div>
 
-    <!-- Disk Usage -->
+    <!-- Uso de Disco -->
     <div class="col-md-3" data-id="widget-disk-usage">
         <div class="card h-100 border-success border-opacity-25 shadow-sm widget-card">
             <div class="card-body d-flex align-items-center">
@@ -77,7 +77,7 @@
 </div>
 
 <div class="row g-4 mb-4">
-    <!-- Microphone Control -->
+    <!-- Control de Micrófono -->
     <div class="col-md-6">
         <div class="card h-100 transition-all" id="mic-card">
             <div class="card-body d-flex align-items-center justify-content-between">
@@ -101,7 +101,7 @@
         </div>
     </div>
 
-    <!-- Command Input -->
+    <!-- Entrada de Comando -->
     <div class="col-md-6" data-id="widget-command-input">
         <div class="card h-100 shadow-sm widget-card">
             <div class="card-body d-flex flex-column justify-content-center">
@@ -117,7 +117,7 @@
         </div>
     </div>
 
-    <!-- System Info Widget -->
+    <!-- Widget de Información del Sistema -->
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header border-0 bg-transparent">
@@ -138,7 +138,7 @@
 </div>
 
 <style>
-    /* Mic Pulse Animation */
+    /* Animación de Pulso de Micrófono */
     @keyframes pulse-ring {
         0% {
             transform: translate(-50%, -50%) scale(0.8);
@@ -187,14 +187,14 @@
         }
     }
 
-    // Initial Status Check
+    // Comprobación de Estado Inicial
     fetch('/api/audio/status')
         .then(res => res.json())
         .then(data => {
             updateMicUI(data.input);
         });
 
-    // Toggle Handler
+    // Manejador del Interruptor
     micToggle.addEventListener('change', function () {
         fetch('/api/audio/toggle', { method: 'POST' })
             .then(res => res.json())
@@ -202,7 +202,7 @@
                 const newState = !data.muted;
                 updateMicUI(newState);
 
-                // Use new notify system
+                // Usar nuevo sistema de notificaciones
                 if (newState) {
                     window.notify("Micrófono Activo", "El sistema ahora te está escuchando.", "success");
                 } else {
@@ -211,14 +211,14 @@
             });
     });
 
-    // SocketIO Event
+    // Evento SocketIO
     if (typeof socket !== 'undefined') {
         socket.on('audio_status', function (data) {
             updateMicUI(data.input);
         });
     }
 
-    // Stats Update
+    // Actualización de Estadísticas
     function updateStats() {
         fetch('/api/stats')
             .then(response => response.json())
@@ -231,15 +231,15 @@
             .catch(err => console.error('Error fetching stats:', err));
     }
 
-    // Initial call and interval
+    // Llamada inicial e intervalo
     updateStats();
     setInterval(updateStats, 2000);
 
-    // --- Drag and Drop Persistence ---
+    // --- Persistencia Drag and Drop ---
     document.addEventListener('DOMContentLoaded', () => {
         const grid = document.getElementById('dashboard-grid');
 
-        // Load Order
+        // Orden de Carga
         const savedOrder = localStorage.getItem('dashboard-order');
         if (savedOrder) {
             const order = JSON.parse(savedOrder);
@@ -249,7 +249,7 @@
             });
         }
 
-        // Init Sortable
+        // Iniciar Sortable
         new Sortable(grid, {
             animation: 150,
             handle: '.move-handle',
@@ -262,7 +262,7 @@
         });
     });
 
-    // --- Web Command Injection ---
+    // --- Inyección de Comandos Web ---
     function sendWebCommand() {
         const input = document.getElementById('cmd-input');
         const text = input.value.trim();

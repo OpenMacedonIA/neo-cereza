@@ -6,52 +6,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEO // CORE</title>
 
-    <!-- Dependencies -->
+    <!-- Dependencias -->
     <script src="/static/js/socket.io.min.js"></script>
     <link rel="stylesheet" href="/static/css/xterm.css" />
     <script src="/static/js/xterm.js"></script>
     <script src="/static/js/xterm-addon-fit.js"></script>
 
-    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <!-- Fuentes: Inter para la Interfaz, JetBrains Mono para el Código -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
 
     <style>
         :root {
-            /* Premium / Modern Dashboard Theme */
-            /* Backgrounds: Deep Slate Blue */
+            /* Tema Premium / Moderno del Dashboard */
+            /* Fondos: Azul Pizarra Profundo */
             --bg-color: #0b0f19;
-            /* Darkest Slate */
+            /* Pizarra Más Oscura */
             --panel-bg: #111827;
-            /* Panel Slate */
+            /* Panel Pizarra */
             --terminal-bg: #121621;
-            /* Terminal Bg */
+            /* Fondo de Terminal */
 
-            /* Text */
+            /* Texto */
             --text-primary: #f1f5f9;
-            /* Slate 100 */
+            /* Pizarra 100 */
             --text-secondary: #94a3b8;
-            /* Slate 400 */
+            /* Pizarra 400 */
             --text-dim: #475569;
-            /* Slate 600 */
+            /* Pizarra 600 */
 
-            /* Accents: Sky Blue / Electric Indigo */
+            /* Acentos: Azul Cielo / Índigo Eléctrico */
             --accent-color: #38bdf8;
-            /* Sky 400 */
+            /* Cielo 400 */
             --accent-secondary: #818cf8;
-            /* Indigo 400 */
+            /* Índigo 400 */
             --accent-glow: rgba(56, 189, 248, 0.15);
 
             --border-color: #1e293b;
-            /* Slate 800 */
+            /* Pizarra 800 */
 
             --success-color: #4ade80;
-            /* Green 400 */
+            /* Verde 400 */
             --warning-color: #fbbf24;
-            /* Amber 400 */
+            /* Ámbar 400 */
             --error-color: #f87171;
-            /* Red 400 */
+            /* Rojo 400 */
         }
 
         body {
@@ -70,12 +70,12 @@
             gap: 0;
         }
 
-        /* --- TERMINAL AREA (Left) --- */
+        /* --- ÁREA DE LA TERMINAL (Izquierda) --- */
         .terminal-container {
             grid-area: terminal;
             background: var(--terminal-bg);
             padding: 40px 48px 20px 48px;
-            /* Breathing room */
+            /* Espacio para respirar */
             border-right: 1px solid var(--border-color);
             position: relative;
             display: flex;
@@ -108,7 +108,7 @@
             opacity: 0.95;
         }
 
-        /* --- AVATAR AREA (Right) --- */
+        /* --- ÁREA DEL AVATAR (Derecha) --- */
         .avatar-container {
             grid-area: avatar;
             background: linear-gradient(145deg, var(--panel-bg), var(--bg-color));
@@ -120,11 +120,11 @@
             box-shadow: inset 20px 0 40px rgba(0, 0, 0, 0.2);
         }
 
-        /* Elegant Orb */
+        /* Orbe Elegante */
         .orb {
             width: 140px;
             height: 140px;
-            /* Multi-stop gradient for depth */
+            /* Gradiente de múltiples paradas para profundidad */
             background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), var(--accent-color) 40%, transparent 70%);
             border-radius: 50%;
             opacity: 0.8;
@@ -134,7 +134,7 @@
             box-shadow: 0 0 60px var(--accent-glow);
         }
 
-        /* Subtle Rings */
+        /* Anillos sutiles */
         .ring {
             position: absolute;
             border-radius: 50%;
@@ -167,10 +167,10 @@
             }
         }
 
-        /* State Modifiers */
+        /* Modificadores de Estado */
         .avatar-container.listening .orb {
             background: radial-gradient(circle at 50% 50%, #ffffff, #e2e8f0 40%, transparent 70%);
-            /* Bright White */
+            /* Blanco Brillante */
             filter: blur(15px);
             transform: scale(1.1);
             box-shadow: 0 0 80px rgba(255, 255, 255, 0.2);
@@ -221,7 +221,7 @@
             text-transform: uppercase;
         }
 
-        /* --- BOTTOM BAR --- */
+        /* --- BARRA INFERIOR --- */
         .bottom-bar {
             grid-area: bottom;
             background: #0f121a;
@@ -264,7 +264,7 @@
             letter-spacing: 1px;
         }
 
-        /* --- PIP MODE --- */
+        /* --- MODO PIP --- */
         .avatar-container.pip-mode {
             position: fixed !important;
             top: 20px !important;
@@ -298,7 +298,7 @@
             display: none !important;
         }
 
-        /* File Viewer Overlay */
+        /* Superposición del Visor de Archivos */
         #file-viewer {
             display: none;
             position: fixed;
@@ -376,7 +376,7 @@
             box-shadow: 0 0 15px rgba(248, 113, 113, 0.3);
         }
 
-        /* Hide terminal/bottom bar in PIP mode */
+        /* Ocultar terminal/barra inferior en modo PIP */
         body.pip-active .terminal-container,
         body.pip-active .bottom-bar {
             opacity: 0.3;
@@ -402,7 +402,7 @@
         <div class="ring ring-2"></div>
         <div class="orb" id="orb"></div>
         <div id="status-text">Standby</div>
-        <!-- Manual Input Overlay (Visible) -->
+        <!-- Superposición de Entrada Manual (Visible) -->
         <div id="input-container"
             style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 60%; z-index: 100; transition: all 0.3s ease;">
             <input type="text" id="manual-cmd" style="width: 100%; background: rgba(17, 24, 39, 0.8); border: 1px solid var(--border-color); 
@@ -413,7 +413,7 @@
                 onblur="this.style.borderColor = 'var(--border-color)'; this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';"
                 placeholder="Type a command...">
         </div>
-        <!-- Navigation Button to Admin Panel -->
+        <!-- Botón de Navegación al Panel de Administración -->
         <a href="/dashboard" style="position: absolute; top: 20px; right: 20px; background: rgba(56, 189, 248, 0.15); 
                    border: 1px solid var(--accent-color); color: var(--accent-color); 
                    padding: 10px 20px; border-radius: 8px; text-decoration: none; 
@@ -426,7 +426,7 @@
         </a>
     </div>
 
-    <!-- File Viewer Overlay (PIP Mode) -->
+    <!-- Superposición del Visor de Archivos (Modo PIP) -->
     <div id="file-viewer">
         <div id="file-viewer-content">
             <div id="file-viewer-header">
@@ -437,7 +437,7 @@
         </div>
     </div>
 
-    <!-- Bottom Bar -->
+    <!-- Barra Inferior -->
     <div class="bottom-bar">
         <div class="bar-left">
             NEO-Papaya v2.5.0
@@ -459,20 +459,20 @@
     </div>
 
     <script>
-        // Init xterm (Modern Theme)
+        // Iniciar xterm (Tema Moderno)
         const term = new Terminal({
             cursorBlink: true,
             cursorStyle: 'bar',
             theme: {
-                background: '#121621', // Matches CSS
-                foreground: '#cbd5e1', // Slate 300
-                cursor: '#38bdf8',     // Sky 400
+                background: '#121621', // Coincide con CSS
+                foreground: '#cbd5e1', // Pizarra 300
+                cursor: '#38bdf8',     // Cielo 400
                 selection: 'rgba(56, 189, 248, 0.2)',
                 black: '#1e293b',
                 red: '#ef4444',
-                green: '#4ade80',      // Soft Green
-                yellow: '#fbbf24',     // Soft Amber
-                blue: '#60a5fa',       // Soft Blue
+                green: '#4ade80',      // Verde Suave
+                yellow: '#fbbf24',     // Ámbar Suave
+                blue: '#60a5fa',       // Azul Suave
                 magenta: '#c084fc',
                 cyan: '#22d3ee',
                 white: '#f8fafc',
@@ -480,7 +480,7 @@
             },
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: 15,
-            lineHeight: 1.5, // More readable
+            lineHeight: 1.5, // Más legible
             allowTransparency: false
         });
 
@@ -492,17 +492,17 @@
 
         window.addEventListener('resize', () => fitAddon.fit());
 
-        // Custom Writeln
+        // Writeln Pesonalizado
         const writeLog = (msg, colorCode = '\x1b[37m') => {
             const now = new Date();
             const time = now.toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" });
-            // Dim timestamp (Slate 600)
+            // Marca de tiempo atenuada (Pizarra 600)
             term.writeln(`\x1b[38;5;240m${time}\x1b[0m  ${colorCode}${msg}\x1b[0m`);
         };
 
         writeLog('System initialized.', '\x1b[38;5;250m');
 
-        // Connect Socket to NeoCore with improved reconnection
+        // Conectar Socket a NeoCore con reconexión mejorada
         const socketUrl = "{{ socket_url }}" || undefined;
         const socket = io(socketUrl, {
             reconnection: true,
@@ -514,63 +514,63 @@
         });
 
         socket.on('connect', () => {
-            console.log('✅ Connected to NeoCore');
+            console.log(' Connected to NeoCore');
         });
 
         socket.on('disconnect', (reason) => {
-            console.warn('⚠️ Disconnected:', reason);
+            console.warn(' Disconnected:', reason);
             if (reason === 'io server disconnect') {
                 socket.connect();
             }
         });
 
         socket.on('reconnect', (attemptNumber) => {
-            console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+            console.log(' Reconnected after', attemptNumber, 'attempts');
             writeLog('Reconnected to server', '\\x1b[32m');
         });
 
         // --- EVENTS ---
 
-        // 1. Log Streaming
+        // 1. Transmisión de Logs
         socket.on('log_message', (data) => {
             let msg = data.msg;
             if (msg.includes('DEBUG')) return;
             msg = msg.replace(/\n/g, '\r\n');
-            // Brighter gray for better visibility
+            // Gris más brillante para mejor visibilidad
             term.writeln(`\x1b[38;5;246m${msg}\x1b[0m`);
         });
 
-        // 2. STT Result (User Voice)
+        // 2. Resultado STT (Voz del Usuario)
         socket.on('stt:result', (data) => {
             const text = data.text;
             term.writeln('');
-            // Bright white, bold for User input
+            // Blanco brillante y negrita para la entrada del Usuario
             term.writeln(`\x1b[1;97m${text}\x1b[0m`);
         });
 
-        // 3. AI Thinking/Response
+        // 3. IA Pensando/Respondiendo
         socket.on('ai:response', (data) => {
             const text = data.text;
-            // Bright cyan for AI response
+            // Cian brillante para la respuesta de IA
             term.writeln(`\x1b[1;96mNeo: ${text}\x1b[0m`);
         });
 
-        // 4. Command Execution
+        // 4. Ejecución de Comandos
         socket.on('command:execution', (data) => {
             const cmd = data.cmd;
             term.writeln('');
-            // Soft Amber for Action
+            // Ámbar Suave para la Acción
             term.writeln(`\x1b[38;5;180m$ ${cmd}\x1b[0m`);
         });
 
-        // 5. Command Output
+        // 5. Salida de Comandos
         socket.on('command:output', (data) => {
             const output = data.output;
-            // Slate 400 for output
+            // Pizarra 400 para la salida
             term.writeln(`\x1b[38;5;248m${output.replace(/\n/g, '\r\n')}\x1b[0m`);
         });
 
-        // Avatar States
+        // Estados del Avatar
         const avatarContainer = document.getElementById('avatar-container');
         const statusText = document.getElementById('status-text');
 
@@ -591,7 +591,7 @@
             statusText.innerText = state;
         });
 
-        // Update Stats (Polling)
+        // Actualizar Estadísticas (Polling)
         function updateStats() {
             fetch('/api/stats')
                 .then(r => r.json())
@@ -602,11 +602,11 @@
                 .catch(e => console.log("Stats poll fail (normal in mock)", e));
         }
 
-        // Poll every 3s
+        // Consultar cada 3s
         setInterval(updateStats, 3000);
         updateStats();
 
-        // --- PIP MODE HANDLER ---
+        // --- MANEJADOR DEL MODO PIP ---
         let pipModeActive = false;
 
         socket.on('ui:pip_mode', (data) => {
@@ -698,19 +698,19 @@
             return div.innerHTML;
         }
 
-        // ESC key handler
+        // Manejador de la tecla ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && pipModeActive) {
                 closePIPMode();
             }
         });
 
-        // Auto-close on voice commands - Intercept STT results
+        // Auto-cierre con comandos de voz - Interceptar resultados STT
         const originalSTTHandler = (data) => {
             const output = data.text;
             term.writeln(`USER: ${output}`);
 
-            // Check for close keywords if in PIP mode
+            // Comprobar palabras clave de cierre si está en modo PIP
             if (pipModeActive) {
                 const text = output.toLowerCase();
                 const closeKeywords = ['cierra', 'cerrar', 'vale perfecto', 'quita', 'cancel'];
@@ -724,20 +724,20 @@
 
         socket.on('stt:result', originalSTTHandler);
 
-        // --- Manual Input Logic ---
+        // --- Lógica de Entrada Manual ---
         const inputContainer = document.getElementById('input-container');
         const inputField = document.getElementById('manual-cmd');
 
         document.addEventListener('keydown', (e) => {
-            // Press 'Enter' to focus input if not focused
+            // Presionar 'Enter' para enfocar la entrada si no está enfocada
             if (e.key === 'Enter') {
                 if (document.activeElement !== inputField) {
                     inputField.focus();
                 } else {
-                    // Send command via Message Bus (like inject_command.py)
+                    // Enviar comando vía Bus de Mensajes (como inject_command.py)
                     const cmd = inputField.value.trim();
                     if (cmd) {
-                        // Emit to bus using the same event as inject_command.py
+                        // Emitir al bus usando el mismo evento que inject_command.py
                         socket.emit('message', {
                             type: 'command:inject',
                             data: { text: cmd },
@@ -750,7 +750,7 @@
                     inputField.blur();
                 }
             }
-            // Escape to blur
+            // Escape para quitar el foco
             if (e.key === 'Escape') {
                 inputField.blur();
             }

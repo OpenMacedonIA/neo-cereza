@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- RAG DOCS SECTION -->
+<!-- SECCIÓN DE DOCUMENTOS RAG -->
 <div class="row fade-in mb-4">
     <div class="col-12">
         <div class="card border-info">
@@ -62,7 +62,7 @@
                             </tr>
                         </thead>
                         <tbody id="knowledgeList">
-                            <!-- JS populates this -->
+                            <!-- JS rellena esto -->
                         </tbody>
                     </table>
                 </div>
@@ -71,7 +71,7 @@
     </div>
 </div>
 
-<!-- Add Fact Modal -->
+<!-- Modal de Añadir Dato -->
 <div class="modal fade" id="addFactModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content bg-dark text-light">
@@ -99,14 +99,14 @@
 </div>
 
 <script>
-    // --- LOAD DATA ---
+    // --- CARGAR DATOS ---
     document.addEventListener('DOMContentLoaded', () => {
         loadKnowledge();
         loadDocs();
         setupDragAndDrop();
     });
 
-    // --- RAG DOCS FUNCTIONS ---
+    // --- FUNCIONES DE DOCUMENTOS RAG ---
     function loadDocs() {
         fetch('/api/knowledge/list_docs')
             .then(res => res.json())
@@ -176,7 +176,7 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    // Flash success or simple toast
+                    // Mostrar éxito o mensaje simple
                     console.log("Uploaded " + file.name);
                     loadDocs();
                 } else {
@@ -200,7 +200,7 @@
 
     function trainBrain() {
         if (confirm("¿Quieres re-procesar todos los documentos? Esto actualizará la memoria vectorial.")) {
-            // Show loading state?
+            // ¿Mostrar estado de carga?
             const btn = document.querySelector('button[onclick="trainBrain()"]');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
@@ -225,7 +225,7 @@
         }
     }
 
-    // --- FACTS FUNCTIONS ---
+    // --- FUNCIONES DE DATOS ---
     function loadKnowledge() {
         fetch('/api/knowledge/list')
             .then(response => response.json())
