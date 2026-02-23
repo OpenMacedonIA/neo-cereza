@@ -168,6 +168,19 @@ def training():
 
 @app.route('/face')
 def face():
+    try:
+        # Check config to serve legacy or new simple UI
+        headers, cookies = get_headers()
+        resp = requests.get(f"{NEO_API_URL}/api/config/get", cookies=cookies, verify=False, timeout=2)
+        if resp.status_code == 200:
+            config_data = resp.json().get('config', {})
+            # Read a custom flag for legacy UI
+            if config_data.get('tangerine', {}).get('use_legacy_face', False):
+                return render_template('face_legacy.html')
+    except Exception as e:
+        print(f"Warning: Could not fetch config for face UI: {e}")
+        
+    # Serve new simple UI by default
     return render_template('face.html')
 
 # --- API PROXY ---
