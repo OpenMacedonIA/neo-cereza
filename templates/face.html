@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,167 +11,484 @@
 
     <style>
         :root {
-            --bg-color: #1a1a1a;
-            --face-bg: #000000;
-            --neon-color: #4ade80; /* Mint Green */
+            --bg-color: #000000;
+            --neon-color: #4ade80;
             --bracket-color: #4ade80;
-            --face-shine: rgba(255, 255, 255, 0.15);
+            --bracket-length: clamp(40px, 7vw, 120px);
+            --bracket-thickness: clamp(3px, 0.5vw, 6px);
+
+            --wave-color: #4ade80;
+            --wave-bars: 32;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
 
         body {
             background-color: var(--bg-color);
-            margin: 0;
-            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
             font-family: monospace;
         }
 
+        /* ── FULL-SCREEN FACE PANEL ── */
         .face-container {
-            width: 400px;
-            height: 250px;
-            background-color: var(--face-bg);
-            border-radius: 125px; /* Oval shape */
-            position: relative;
-            box-shadow: 
-                0 0 50px rgba(0, 0, 0, 0.5),
-                inset 0 0 20px rgba(74, 222, 128, 0.1);
+            position: fixed;
+            inset: 0;
+            background-color: #000000;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            border: 4px solid #0f0f0f;
-            overflow: hidden; /* For terminal text */
+            gap: clamp(20px, 4vw, 56px);
             transition: all 0.3s ease;
         }
 
-        /* Glossy shine effect on the glass screen */
+        /* Subtle radial glow in center */
         .face-container::before {
             content: '';
             position: absolute;
-            top: 5%;
-            left: 5%;
-            width: 90%;
-            height: 40%;
-            background: linear-gradient(to bottom, var(--face-shine), transparent);
-            border-radius: 100px 100px 0 0;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 40%, rgba(74, 222, 128, 0.05) 0%, transparent 65%);
             pointer-events: none;
+            transition: opacity 0.4s;
         }
 
-        /* Terminal Brackets [ ] */
+        /* Extra glow when active */
+        .face-container.listening::before,
+        .face-container.speaking::before {
+            background: radial-gradient(ellipse at 50% 40%, rgba(74, 222, 128, 0.10) 0%, transparent 60%);
+        }
+
+        /* ─── CORNER BRACKETS – L-shape via CSS borders ─── */
         .bracket {
-            position: absolute;
-            color: var(--bracket-color);
-            font-size: 40px;
-            font-weight: bold;
-            opacity: 0.8;
-            text-shadow: 0 0 10px var(--bracket-color);
+            position: fixed;
+            width: var(--bracket-length);
+            height: var(--bracket-length);
+            opacity: 0.85;
+            filter: drop-shadow(0 0 8px var(--bracket-color));
+            transition: all 0.3s ease;
         }
 
-        .bracket-tl { top: 20px; left: 40px; }
-        .bracket-tr { top: 20px; right: 40px; }
-        .bracket-bl { bottom: 20px; left: 40px; }
-        .bracket-br { bottom: 20px; right: 40px; }
+        .bracket-tl {
+            top: clamp(16px, 3vw, 48px);
+            left: clamp(16px, 3vw, 48px);
+            border-top: var(--bracket-thickness) solid var(--bracket-color);
+            border-left: var(--bracket-thickness) solid var(--bracket-color);
+        }
 
-        /* The Expression Text */
+        .bracket-tr {
+            top: clamp(16px, 3vw, 48px);
+            right: clamp(16px, 3vw, 48px);
+            border-top: var(--bracket-thickness) solid var(--bracket-color);
+            border-right: var(--bracket-thickness) solid var(--bracket-color);
+        }
+
+        .bracket-bl {
+            bottom: clamp(16px, 3vw, 48px);
+            left: clamp(16px, 3vw, 48px);
+            border-bottom: var(--bracket-thickness) solid var(--bracket-color);
+            border-left: var(--bracket-thickness) solid var(--bracket-color);
+        }
+
+        .bracket-br {
+            bottom: clamp(16px, 3vw, 48px);
+            right: clamp(16px, 3vw, 48px);
+            border-bottom: var(--bracket-thickness) solid var(--bracket-color);
+            border-right: var(--bracket-thickness) solid var(--bracket-color);
+        }
+
+        /* ─── EXPRESSION (eyes) ─── */
         #expression {
             color: var(--neon-color);
-            font-size: 80px;
+            font-size: clamp(60px, 14vw, 260px);
             font-weight: bold;
-            text-shadow: 0 0 15px var(--neon-color), 0 0 30px var(--neon-color);
-            letter-spacing: 10px;
-            transition: all 0.2s ease-in-out;
-            white-space: pre; /* to preserve spaces */
+            text-shadow:
+                0 0 20px var(--neon-color),
+                0 0 50px var(--neon-color),
+                0 0 90px rgba(74, 222, 128, 0.4);
+            letter-spacing: clamp(10px, 3vw, 60px);
+            transition: all 0.25s ease-in-out;
+            white-space: pre;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Terminal Mode Styling */
+        /* ─── TERMINAL TEXT MODE ─── */
         #terminal-text {
             color: var(--neon-color);
-            font-size: 14px;
-            text-shadow: 0 0 5px var(--neon-color);
+            font-size: clamp(13px, 1.5vw, 22px);
+            line-height: 1.6;
+            text-shadow: 0 0 6px var(--neon-color);
             position: absolute;
-            top: 20px;
-            left: 40px;
-            right: 40px;
-            bottom: 20px;
+            top: clamp(60px, 8vw, 140px);
+            left: clamp(60px, 8vw, 140px);
+            right: clamp(60px, 8vw, 140px);
+            bottom: clamp(60px, 8vw, 140px);
             overflow: hidden;
             display: none;
             word-wrap: break-word;
-            opacity: 0.8;
+            opacity: 0.85;
+            z-index: 1;
         }
 
-        /* Animations */
+        /* ─── SOUND WAVE VISUALIZER ─── */
+        #wave-visualizer {
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            gap: clamp(2px, 0.4vw, 6px);
+            height: clamp(50px, 8vw, 120px);
+            width: clamp(180px, 35vw, 600px);
+            z-index: 2;
+            position: relative;
+        }
+
+        #wave-visualizer.visible {
+            display: flex;
+        }
+
+        .wave-bar {
+            flex: 1;
+            background: var(--wave-color);
+            border-radius: 3px 3px 2px 2px;
+            min-height: 4px;
+            max-height: 100%;
+            box-shadow: 0 0 6px var(--wave-color);
+            transform-origin: bottom center;
+            transition: height 0.06s ease;
+        }
+
+        /* ─── STATE LABEL ─── */
+        #state-label {
+            font-size: clamp(9px, 1.2vw, 16px);
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: rgba(74, 222, 128, 0.5);
+            text-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
+            position: absolute;
+            bottom: clamp(28px, 5vw, 70px);
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            transition: opacity 0.4s;
+            opacity: 0;
+            z-index: 2;
+        }
+
+        #state-label.visible {
+            opacity: 1;
+        }
+
+        /* ─── WEBUI BUTTON ─── */
+        #webui-btn {
+            position: fixed;
+            top: clamp(12px, 2.5vw, 36px);
+            right: clamp(80px, 12vw, 180px);
+            /* leave space away from bracket corner */
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(74, 222, 128, 0.35);
+            border-radius: 4px;
+            color: rgba(74, 222, 128, 0.7);
+            font-family: monospace;
+            font-size: clamp(10px, 1.1vw, 14px);
+            letter-spacing: 0.1em;
+            text-decoration: none;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, opacity 0.4s;
+            opacity: 0.55;
+        }
+
+        #webui-btn:hover {
+            opacity: 1;
+            color: var(--neon-color);
+            border-color: rgba(74, 222, 128, 0.8);
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.3);
+        }
+
+        #webui-btn svg {
+            width: 13px;
+            height: 13px;
+            fill: currentColor;
+        }
+
+        /* ─── ANIMATIONS ─── */
         @keyframes pulse {
-            0% { text-shadow: 0 0 10px var(--neon-color); }
-            50% { text-shadow: 0 0 25px var(--neon-color), 0 0 40px var(--neon-color); }
-            100% { text-shadow: 0 0 10px var(--neon-color); }
+            0% {
+                text-shadow: 0 0 15px var(--neon-color);
+            }
+
+            50% {
+                text-shadow: 0 0 40px var(--neon-color), 0 0 80px var(--neon-color);
+            }
+
+            100% {
+                text-shadow: 0 0 15px var(--neon-color);
+            }
+        }
+
+        @keyframes bracketPulse {
+            0% {
+                opacity: 0.85;
+                filter: drop-shadow(0 0 6px var(--bracket-color));
+            }
+
+            50% {
+                opacity: 1;
+                filter: drop-shadow(0 0 18px var(--bracket-color));
+            }
+
+            100% {
+                opacity: 0.85;
+                filter: drop-shadow(0 0 6px var(--bracket-color));
+            }
+        }
+
+        @keyframes bracketSpeaking {
+            0% {
+                opacity: 1;
+                filter: drop-shadow(0 0 12px var(--bracket-color));
+            }
+
+            50% {
+                opacity: 0.6;
+                filter: drop-shadow(0 0 4px var(--bracket-color));
+            }
+
+            100% {
+                opacity: 1;
+                filter: drop-shadow(0 0 12px var(--bracket-color));
+            }
+        }
+
+        /* Thinking dots bounce */
+        @keyframes dotBounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scaleY(0.4);
+                opacity: 0.4;
+            }
+
+            40% {
+                transform: scaleY(1.2);
+                opacity: 1;
+            }
         }
 
         .thinking #expression {
-            animation: pulse 1s infinite alternate;
+            animation: pulse 1.2s infinite alternate;
         }
-        
+
+        .thinking .bracket {
+            animation: bracketPulse 1.2s infinite alternate;
+        }
+
+        .listening .bracket {
+            animation: bracketPulse 0.8s infinite alternate;
+        }
+
+        .speaking .bracket {
+            animation: bracketSpeaking 0.5s infinite ease-in-out;
+        }
     </style>
 </head>
+
 <body>
 
+    <!-- Corner Brackets -->
+    <div class="bracket bracket-tl"></div>
+    <div class="bracket bracket-tr"></div>
+    <div class="bracket bracket-bl"></div>
+    <div class="bracket bracket-br"></div>
+
+    <!-- WebUI link button -->
+    <a id="webui-btn" href="/dashboard" title="Abrir WebUI">
+        <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path
+                d="M3 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4zm0 6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6zm8 0a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-6z" />
+        </svg>
+        WEBUI
+    </a>
+
     <div class="face-container" id="face">
-        <!-- Corner Brackets -->
-        <div class="bracket bracket-tl">┌</div>
-        <div class="bracket bracket-tr">┐</div>
-        <div class="bracket bracket-bl">└</div>
-        <div class="bracket bracket-br">┘</div>
 
         <!-- Expression Display -->
         <div id="expression">^ ^</div>
-        
-        <!-- Terminal Text Display (Hidden by default) -->
+
+        <!-- Sound Wave Visualizer (listening / speaking) -->
+        <div id="wave-visualizer">
+            <!-- bars injected by JS -->
+        </div>
+
+        <!-- Terminal Text Display (hidden by default) -->
         <div id="terminal-text"></div>
+
     </div>
 
+    <!-- State label (bottom center) -->
+    <div id="state-label"></div>
 
     <script>
-        // Expression Dictionary
+        // ─── Config ───────────────────────────────────────────
+        const N_BARS = 32;
+        const IDLE_HEIGHT_PCT = 0.04; // resting bar height as fraction of visualizer
+
         const expressions = {
-            'idle': '^ ^',           // 1. Standard Happy
-            'love': '♥ ♥',           // 2. Love/Adoration
-            'winking': '− ^',        // 3. Winking/Playful
-            'surprised': 'O O',      // 4. Surprised/Wow  (user_detected / alert)
-            'thinking': '...',       // 5. Thinking/Loading
-            'sad': '; _ ;',          // 7. Sad/Concerned (error)
-            'angry': '> _ <',        // 8. Angry/Determined
-            'mischievous': '¬ ‿ ¬',  // 9. Mischievous/Hacker
-            'speaking': '− ‿ −'      // custom speaking mouth
+            'idle': '^ ^',
+            'love': '♥ ♥',
+            'winking': '− ^',
+            'surprised': 'O O',
+            'thinking': '~ ~',
+            'sad': '; _ ;',
+            'angry': '> _ <',
+            'mischievous': '¬ ‿ ¬',
+            'speaking': '· ‿ ·',
+            'listening': '- -'
         };
 
+        // ─── DOM Refs ─────────────────────────────────────────
         const expressionEl = document.getElementById('expression');
         const faceEl = document.getElementById('face');
         const terminalEl = document.getElementById('terminal-text');
+        const waveEl = document.getElementById('wave-visualizer');
+        const stateLabelEl = document.getElementById('state-label');
 
+        // ─── Build Wave Bars ──────────────────────────────────
+        const bars = [];
+        for (let i = 0; i < N_BARS; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'wave-bar';
+            bar.style.height = '4px';
+            waveEl.appendChild(bar);
+            bars.push(bar);
+        }
+
+        // ─── Wave Animation State ─────────────────────────────
+        let waveAnimId = null;
+        let currentMode = 'idle'; // 'idle' | 'listening' | 'speaking'
+
+        function startWave(mode) {
+            currentMode = mode;
+            waveEl.classList.add('visible');
+
+            if (waveAnimId) return; // already running
+
+            const totalH = waveEl.clientHeight || 100;
+
+            function tick() {
+                bars.forEach((bar, i) => {
+                    let pct;
+                    if (mode === 'listening') {
+                        // Random mic-style noise, higher bars in center
+                        const centerBias = 1 - Math.abs((i / N_BARS) - 0.5) * 1.2;
+                        pct = (Math.random() * 0.55 + 0.08) * Math.max(0.2, centerBias);
+                    } else if (mode === 'speaking') {
+                        // Smoother sine-like talking wave
+                        const t = Date.now() / 1000;
+                        const centerBias = 1 - Math.abs((i / N_BARS) - 0.5) * 1.4;
+                        pct = (0.35 + 0.45 * Math.abs(Math.sin(t * 4 + i * 0.4))) * Math.max(0.1, centerBias);
+                    } else {
+                        pct = IDLE_HEIGHT_PCT;
+                    }
+                    bar.style.height = Math.max(4, pct * totalH) + 'px';
+                });
+                waveAnimId = requestAnimationFrame(tick);
+            }
+            tick();
+        }
+
+        function stopWave() {
+            if (waveAnimId) {
+                cancelAnimationFrame(waveAnimId);
+                waveAnimId = null;
+            }
+            waveEl.classList.remove('visible');
+            bars.forEach(b => b.style.height = '4px');
+            currentMode = 'idle';
+        }
+
+        // ─── State Label ──────────────────────────────────────
+        let labelTimer = null;
+        function showLabel(text, durationMs) {
+            stateLabelEl.textContent = text;
+            stateLabelEl.classList.add('visible');
+            if (labelTimer) clearTimeout(labelTimer);
+            if (durationMs) {
+                labelTimer = setTimeout(() => stateLabelEl.classList.remove('visible'), durationMs);
+            }
+        }
+        function hideLabel() {
+            if (labelTimer) clearTimeout(labelTimer);
+            stateLabelEl.classList.remove('visible');
+        }
+
+        // ─── Expression Setter ────────────────────────────────
         function setExpression(state) {
             faceEl.className = 'face-container'; // reset classes
             terminalEl.style.display = 'none';
             expressionEl.style.display = 'block';
+            stopWave();
+            hideLabel();
 
             if (state === 'terminal' || state === 'executing') {
-                // 6. Terminal/SysAdmin Mode
                 expressionEl.style.display = 'none';
                 terminalEl.style.display = 'block';
                 return;
             }
 
+            // Wave states
+            if (state === 'listening') {
+                expressionEl.textContent = expressions['listening'];
+                faceEl.classList.add('listening');
+                startWave('listening');
+                showLabel('ESCUCHANDO');
+                return;
+            }
+
+            if (state === 'speaking') {
+                expressionEl.textContent = expressions['speaking'];
+                faceEl.classList.add('speaking');
+                startWave('speaking');
+                showLabel('HABLANDO');
+                return;
+            }
+
+            if (state === 'thinking') {
+                expressionEl.textContent = expressions['thinking'];
+                faceEl.classList.add('thinking');
+                showLabel('PROCESANDO');
+                return;
+            }
+
             if (expressions[state]) {
                 expressionEl.textContent = expressions[state];
-                if (state === 'thinking') {
-                    faceEl.classList.add('thinking');
-                }
             } else {
                 expressionEl.textContent = expressions['idle'];
             }
         }
 
-        // Simular logs de terminal para el modo SysAdmin
+        // ─── Terminal ─────────────────────────────────────────
         let terminalLines = [];
         function addTerminalLine(text) {
             terminalLines.push(text);
@@ -178,7 +496,7 @@
             terminalEl.innerHTML = terminalLines.join('<br>') + '<br>_';
         }
 
-        // Conectar Socket a NeoCore
+        // ─── Socket ───────────────────────────────────────────
         const socketUrl = "{{ socket_url }}" || undefined;
         const socket = io(socketUrl, {
             reconnection: true,
@@ -197,65 +515,53 @@
             setExpression('sad');
         });
 
-        // Eventos Principales del Rostro
         socket.on('face_update', (data) => {
-            const state = data.state; // 'listening', 'speaking', 'thinking', 'idle', 'user_detected'
-            
+            const state = data.state;
             if (state === 'user_detected') {
                 setExpression('surprised');
                 setTimeout(() => setExpression('idle'), 2000);
             } else if (state === 'listening') {
-                setExpression('winking');
+                setExpression('listening');
+            } else if (state === 'speaking') {
+                setExpression('speaking');
             } else {
                 setExpression(state);
             }
         });
 
-        // Eventos Secundarios para otras emociones
         socket.on('emotion_update', (data) => {
-            // Permite inyectar emociones específicas: 'love', 'angry', 'mischievous', 'sad'
             const emotion = data.emotion;
             setExpression(emotion);
-            
-            // Volver a idle después de unos segundos a menos que sea un estado persistente
             if (data.temp !== false) {
-                 setTimeout(() => setExpression('idle'), 3000);
+                setTimeout(() => setExpression('idle'), 3000);
             }
         });
 
-        // Capturar ejecución de comandos para el Modo Terminal (6)
         socket.on('command:execution', (data) => {
             setExpression('terminal');
             addTerminalLine(`> Executing: ${data.cmd}`);
-            
-            // Volver a idle despues de un tiempo simulado si no hay respuesta
             setTimeout(() => {
-                if(faceEl.className.includes('face-container') && terminalEl.style.display === 'block'){
+                if (terminalEl.style.display === 'block') {
                     setExpression('idle');
                 }
             }, 5000);
         });
 
         socket.on('command:output', (data) => {
-             if(terminalEl.style.display === 'none') {
-                 setExpression('terminal');
-             }
-             const lines = data.output.split('\n');
-             lines.forEach(l => {
-                 if(l.trim()) addTerminalLine(l);
-             });
-             
-             // Volver a idle después de mostrar la salida
-             setTimeout(() => setExpression('idle'), 4000);
+            if (terminalEl.style.display === 'none') {
+                setExpression('terminal');
+            }
+            const lines = data.output.split('\n');
+            lines.forEach(l => { if (l.trim()) addTerminalLine(l); });
+            setTimeout(() => setExpression('idle'), 4000);
         });
-        
-        // Log simple para ver que pasa en el server si el terminal esta activo
+
         socket.on('log_message', (data) => {
-            if(terminalEl.style.display === 'block') {
+            if (terminalEl.style.display === 'block') {
                 addTerminalLine(data.msg);
             }
         });
-
     </script>
 </body>
+
 </html>
