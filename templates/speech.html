@@ -1,54 +1,721 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+<style>
+  /* ─── Voz Interactiva ──────────────────────────────────────────── */
+  .voice-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem 0 1rem;
+  }
+
+  /* Anillo exterior animado */
+  .mic-ring-wrapper {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mic-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .mic-ring-1 { width: 160px; height: 160px; }
+  .mic-ring-2 { width: 130px; height: 130px; }
+
+  .mic-ring-wrapper.listening .mic-ring {
+    opacity: 0.5;
+    animation: ring-pulse 1.4s ease-out infinite;
+  }
+  .mic-ring-wrapper.listening .mic-ring-2 {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes ring-pulse {
+    0%   { transform: scale(0.85); opacity: 0.7; }
+    100% { transform: scale(1.15); opacity: 0;   }
+  }
+
+  /* Botón de micrófono central */
+  .mic-btn {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 120%);
+    box-shadow: 0 0 30px var(--primary-glow), 0 8px 24px rgba(0,0,0,0.4);
+    color: #fff;
+  }
+
+  .mic-btn:hover  { transform: scale(1.06); box-shadow: 0 0 45px var(--primary-glow); }
+  .mic-btn:active { transform: scale(0.96); }
+
+  .mic-btn.listening {
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 120%);
+    box-shadow: 0 0 40px rgba(239,68,68,0.6), 0 8px 24px rgba(0,0,0,0.4);
+    animation: mic-throb 0.8s ease-in-out infinite alternate;
+  }
+
+  .mic-btn.processing {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 120%);
+    box-shadow: 0 0 40px rgba(251,191,36,0.5), 0 8px 24px rgba(0,0,0,0.4);
+    animation: spin-glow 1.2s linear infinite;
+  }
+
+  .mic-btn.speaking {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 120%);
+    box-shadow: 0 0 40px rgba(74,222,128,0.5), 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  @keyframes mic-throb {
+    from { transform: scale(1.00); }
+    to   { transform: scale(1.05); }
+  }
+  @keyframes spin-glow {
+    0%   { box-shadow: 0 0 40px rgba(251,191,36,0.5) }
+    50%  { box-shadow: 0 0 60px rgba(251,191,36,0.8) }
+    100% { box-shadow: 0 0 40px rgba(251,191,36,0.5) }
+  }
+
+  /* Etiqueta de estado */
+  .status-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    transition: color 0.3s;
+    min-height: 1.4em;
+  }
+  .status-label.listening  { color: #ef4444; }
+  .status-label.processing { color: #fbbf24; }
+  .status-label.speaking   { color: #4ade80; }
+
+  /* Visualizador de onda */
+  #waveform-canvas {
+    width: 100%;
+    max-width: 480px;
+    height: 64px;
+    border-radius: 0.75rem;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+  }
+
+  /* Panel de diálogo */
+  .dialogue-panel {
+    width: 100%;
+    max-height: 420px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    scroll-behavior: smooth;
+  }
+
+  .bubble {
+    max-width: 78%;
+    padding: 0.8rem 1.2rem;
+    border-radius: 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    animation: bubble-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    word-break: break-word;
+  }
+
+  @keyframes bubble-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.95); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .bubble.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, rgba(56,189,248,0.15) 0%, rgba(129,140,248,0.1) 100%);
+    border: 1px solid rgba(56,189,248,0.3);
+    border-bottom-right-radius: 4px;
+    color: var(--text-main);
+  }
+
+  .bubble.neo {
+    align-self: flex-start;
+    background: linear-gradient(135deg, rgba(74,222,128,0.1) 0%, rgba(56,189,248,0.05) 100%);
+    border: 1px solid rgba(74,222,128,0.25);
+    border-bottom-left-radius: 4px;
+    color: var(--text-main);
+  }
+
+  .bubble .bubble-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+  }
+
+  .bubble.user .bubble-meta { text-align: right; }
+
+  /* Barra de energía VAD */
+  .energy-bar-wrap {
+    width: 100%;
+    max-width: 480px;
+    height: 6px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .energy-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 3px;
+    transition: width 0.08s linear;
+  }
+
+  /* Controles secundarios */
+  .voice-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .vad-threshold-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  /* Pill de modo VAD */
+  .mode-pill {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .mode-pill.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  /* Sin historial */
+  .empty-dialogue {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    padding: 2rem 0;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h3>Historial de Voz</h3>
-        <span class="status-indicator active">En vivo</span>
-    </div>
-    <div class="card-body">
-        <div id="speech-log" class="terminal-window"
-            style="height: 500px; overflow-y: auto; display: flex; flex-direction: column-reverse;">
-            <!-- Las burbujas de chat aparecerán aquí -->
+<div class="row g-4">
+
+  <!-- Panel principal de voz -->
+  <div class="col-12 col-lg-7">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fas fa-microphone text-primary"></i>
+          <h3 class="mb-0" style="font-size:1.1rem;">Voz Interactiva</h3>
         </div>
+        <span id="conn-badge" class="badge bg-secondary rounded-pill">
+          <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> Conectando…
+        </span>
+      </div>
+
+      <div class="card-body">
+        <!-- Hero -->
+        <div class="voice-hero">
+          <!-- Botón mic con anillos -->
+          <div class="mic-ring-wrapper" id="mic-ring-wrap">
+            <div class="mic-ring mic-ring-1"></div>
+            <div class="mic-ring mic-ring-2"></div>
+            <button id="mic-btn" class="mic-btn" title="Pulsa para hablar" aria-label="Activar micrófono">
+              <i class="fas fa-microphone" id="mic-icon"></i>
+            </button>
+          </div>
+
+          <!-- Etiqueta de estado -->
+          <div class="status-label" id="status-label">Listo</div>
+
+          <!-- Waveform canvas -->
+          <canvas id="waveform-canvas" aria-hidden="true"></canvas>
+
+          <!-- Barra de energía VAD -->
+          <div class="energy-bar-wrap" title="Nivel de energía de voz">
+            <div class="energy-bar" id="energy-bar"></div>
+          </div>
+
+          <!-- Modo y sensibilidad -->
+          <div class="voice-controls">
+            <button class="mode-pill active" id="mode-vad" title="Detección automática de voz">
+              <i class="fas fa-magic me-1"></i>VAD Auto
+            </button>
+            <button class="mode-pill" id="mode-ptt" title="Pulsa para hablar (mantén pulsado)">
+              <i class="fas fa-hand-paper me-1"></i>Push-to-Talk
+            </button>
+            <div class="vad-threshold-wrap">
+              <i class="fas fa-sliders-h"></i>
+              <label for="vad-threshold">Umbral</label>
+              <input type="range" id="vad-threshold" min="1" max="50" value="8"
+                     style="width:80px; accent-color: var(--primary);">
+              <span id="vad-threshold-val">8</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Panel de diálogo -->
+  <div class="col-12 col-lg-5">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fas fa-comments text-accent" style="color:var(--accent);"></i>
+          <h3 class="mb-0" style="font-size:1.1rem;">Conversación</h3>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary border-0" id="clear-btn" title="Limpiar historial">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+      <div class="card-body" style="overflow:hidden;">
+        <div class="dialogue-panel" id="dialogue-panel">
+          <div class="empty-dialogue" id="empty-hint">
+            <i class="fas fa-microphone-alt fa-2x mb-2 text-muted"></i>
+            <p>Haz clic en el micrófono y empieza a hablar.<br>
+               La transcripción aparecerá aquí en tiempo real.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    function updateSpeechLog() {
-        fetch('/api/speech_history')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('speech-log');
-                container.innerHTML = ''; // Clear current
+// ════════════════════════════════════════════════════════════════════
+//  Neo Voice Interface — Browser Mic → PCM16 → /api/voice/audio
+// ════════════════════════════════════════════════════════════════════
 
-                // Los datos vienen ordenados DESC (más nuevos primero), ¿pero queremos mostrar los más nuevos abajo habitualmente?
-                // En realidad, flex-direction: column-reverse maneja "más nuevos abajo" si los añadimos en orden?
-                // Simplemente los renderizamos.
+(function () {
+  'use strict';
 
-                data.forEach(item => {
-                    const row = document.createElement('div');
-                    row.style.marginBottom = '15px';
-                    row.style.borderBottom = '1px solid #333';
-                    row.style.paddingBottom = '10px';
+  // ── DOM refs ────────────────────────────────────────────────────
+  const micBtn       = document.getElementById('mic-btn');
+  const micIcon      = document.getElementById('mic-icon');
+  const micRingWrap  = document.getElementById('mic-ring-wrap');
+  const statusLabel  = document.getElementById('status-label');
+  const energyBar    = document.getElementById('energy-bar');
+  const canvas       = document.getElementById('waveform-canvas');
+  const ctx2d        = canvas.getContext('2d');
+  const dialogueEl   = document.getElementById('dialogue-panel');
+  const emptyHint    = document.getElementById('empty-hint');
+  const connBadge    = document.getElementById('conn-badge');
+  const clearBtn     = document.getElementById('clear-btn');
+  const modeVad      = document.getElementById('mode-vad');
+  const modePtt      = document.getElementById('mode-ptt');
+  const vadSlider    = document.getElementById('vad-threshold');
+  const vadVal       = document.getElementById('vad-threshold-val');
 
-                    const time = new Date(item.timestamp).toLocaleTimeString();
+  // ── Configuración ───────────────────────────────────────────────
+  const TARGET_RATE   = 16000;   // Hz que espera Sherpa-ONNX
+  const FRAME_SIZE    = 2048;    // muestras por frame
+  const CHUNK_MS      = 30;      // ms entre frames
+  const SILENCE_GRACE = 800;     // ms de silencio para cortar
+  const MIN_AUDIO_MS  = 300;     // umbral mínimo de audio para enviar
 
-                    row.innerHTML = `
-                        <div style="font-size: 0.8em; color: #666;">${time} - ${item.intent || 'Unknown'}</div>
-                        <div style="color: #4CAF50;"><strong>User:</strong> ${item.user}</div>
-                        <div style="color: #2196F3;"><strong>Tío:</strong> ${item.neo}</div>
-                    `;
-                    container.appendChild(row);
-                });
-            })
-            .catch(err => console.error('Error fetching speech history:', err));
+  // ── Estado ──────────────────────────────────────────────────────
+  let audioCtx       = null;
+  let sourceNode     = null;
+  let processorNode  = null;
+  let analyserNode   = null;
+  let mediaStream    = null;
+  let isRecording    = false;
+  let pcmChunks      = [];       // Int16Array chunks
+  let silenceTimer   = null;
+  let recordStart    = 0;
+  let rafId          = null;
+  let isPtt          = false;    // modo Push-to-Talk
+  let pttActive      = false;
+  let autoListen     = false;    // si VAD ha superado umbral
+  let vadThreshold   = 8;        // % energía RMS
+
+  vadSlider.addEventListener('input', () => {
+    vadThreshold = +vadSlider.value;
+    vadVal.textContent = vadThreshold;
+  });
+
+  // ── Modo ─────────────────────────────────────────────────────────
+  modeVad.addEventListener('click', () => { isPtt = false; syncMode(); });
+  modePtt.addEventListener('click', () => { isPtt = true;  syncMode(); });
+
+  function syncMode() {
+    modeVad.classList.toggle('active', !isPtt);
+    modePtt.classList.toggle('active', isPtt);
+    micBtn.title = isPtt ? 'Mantén pulsado para hablar' : 'Pulsa para activar/desactivar';
+    setStatus('idle');
+  }
+
+  // ── Socket.IO (ya disponible desde base.html) ────────────────────
+  socket.on('connect', () => {
+    connBadge.innerHTML = '<i class="fas fa-circle me-1" style="font-size:0.5rem;color:#4ade80"></i> Conectado';
+    connBadge.className = 'badge bg-success rounded-pill';
+  });
+  socket.on('disconnect', () => {
+    connBadge.innerHTML = '<i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> Desconectado';
+    connBadge.className = 'badge bg-danger rounded-pill';
+  });
+
+  // Transcripción recibida del STT → burbuja del usuario
+  socket.on('stt:result', (data) => {
+    if (data && data.text) addBubble(data.text, 'user');
+    setStatus('speaking'); // Neo va a contestar
+  });
+
+  // Respuesta de Neo
+  socket.on('ai:response', (data) => {
+    if (data && data.text) {
+      addBubble(data.text, 'neo');
+      setStatus('idle');
+    }
+  });
+
+  // ── Botón micrófono ──────────────────────────────────────────────
+  micBtn.addEventListener('click', async () => {
+    if (isPtt) return; // PTT se gestiona con mousedown/up
+    if (isRecording) {
+      stopRecording(true);
+    } else {
+      await startRecording();
+    }
+  });
+
+  // Push-to-Talk
+  micBtn.addEventListener('mousedown', async (e) => {
+    if (!isPtt) return;
+    e.preventDefault();
+    pttActive = true;
+    await startRecording();
+  });
+  micBtn.addEventListener('mouseup', () => {
+    if (!isPtt || !pttActive) return;
+    pttActive = false;
+    stopRecording(true);
+  });
+  micBtn.addEventListener('mouseleave', () => {
+    if (!isPtt || !pttActive) return;
+    pttActive = false;
+    stopRecording(true);
+  });
+  // Touch PTT
+  micBtn.addEventListener('touchstart', async (e) => {
+    if (!isPtt) return;
+    e.preventDefault();
+    pttActive = true;
+    await startRecording();
+  }, { passive: false });
+  micBtn.addEventListener('touchend', () => {
+    if (!isPtt || !pttActive) return;
+    pttActive = false;
+    stopRecording(true);
+  });
+
+  // ── Audio pipeline ───────────────────────────────────────────────
+  async function startRecording() {
+    if (isRecording) return;
+
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch (err) {
+      notify('Micrófono', 'No se pudo acceder al micrófono: ' + err.message, 'danger');
+      return;
     }
 
-    // Actualizar cada 2 segundos
-    setInterval(updateSpeechLog, 2000);
-    updateSpeechLog();
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: TARGET_RATE });
+    sourceNode   = audioCtx.createMediaStreamSource(mediaStream);
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 1024;
+
+    // ScriptProcessor para capturar PCM (compatible ampliamente)
+    processorNode = audioCtx.createScriptProcessor(FRAME_SIZE, 1, 1);
+    sourceNode.connect(analyserNode);
+    sourceNode.connect(processorNode);
+    processorNode.connect(audioCtx.destination); // necesario para que funcione en algunos browsers
+
+    pcmChunks  = [];
+    isRecording = true;
+    recordStart = Date.now();
+    clearSilenceTimer();
+
+    processorNode.onaudioprocess = onAudioProcess;
+
+    setStatus('listening');
+    startWaveformLoop();
+  }
+
+  function onAudioProcess(e) {
+    const float32 = e.inputBuffer.getChannelData(0);
+
+    // Calcular RMS (energía)
+    let sum = 0;
+    for (let i = 0; i < float32.length; i++) sum += float32[i] * float32[i];
+    const rms = Math.sqrt(sum / float32.length) * 100; // 0-100
+
+    // Actualizar barra
+    energyBar.style.width = Math.min(rms * 4, 100) + '%';
+
+    // Convertir float32 → int16
+    const int16 = float32ToInt16(float32);
+    pcmChunks.push(int16);
+
+    // VAD: detectar silencio
+    if (!isPtt) {
+      if (rms > vadThreshold) {
+        autoListen = true;
+        clearSilenceTimer();
+      } else if (autoListen) {
+        scheduleSilence();
+      }
+    }
+  }
+
+  function scheduleSilence() {
+    if (silenceTimer) return;
+    silenceTimer = setTimeout(() => {
+      silenceTimer = null;
+      if (isRecording) stopRecording(true);
+    }, SILENCE_GRACE);
+  }
+
+  function clearSilenceTimer() {
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+  }
+
+  function stopRecording(send = false) {
+    if (!isRecording) return;
+    isRecording  = false;
+    autoListen   = false;
+    clearSilenceTimer();
+    cancelAnimationFrame(rafId);
+    clearCanvas();
+    energyBar.style.width = '0%';
+
+    if (processorNode) { processorNode.disconnect(); processorNode.onaudioprocess = null; }
+    if (sourceNode)    sourceNode.disconnect();
+    if (mediaStream)   mediaStream.getTracks().forEach(t => t.stop());
+    if (audioCtx)      audioCtx.close();
+
+    processorNode = sourceNode = analyserNode = mediaStream = audioCtx = null;
+
+    const elapsed = Date.now() - recordStart;
+    if (send && pcmChunks.length > 0 && elapsed >= MIN_AUDIO_MS) {
+      setStatus('processing');
+      sendAudio(pcmChunks);
+    } else {
+      setStatus('idle');
+    }
+    pcmChunks = [];
+  }
+
+  // ── Envío de audio ───────────────────────────────────────────────
+  async function sendAudio(chunks) {
+    // Concatenar todos los chunks Int16
+    const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+    const pcm = new Int16Array(totalLen);
+    let offset = 0;
+    for (const chunk of chunks) {
+      pcm.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    // Codificar en base64
+    const bytes = new Uint8Array(pcm.buffer);
+    const b64   = uint8ToBase64(bytes);
+
+    try {
+      const resp = await fetch('/api/voice/audio', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ audio: b64, rate: TARGET_RATE })
+      });
+      const json = await resp.json();
+      if (json.status !== 'ok') {
+        notify('Error de audio', json.message || 'Error desconocido', 'danger');
+        setStatus('idle');
+      }
+      // Si ok, el STT devolverá stt:result por SocketIO
+    } catch (err) {
+      notify('Error de red', err.message, 'danger');
+      setStatus('idle');
+    }
+  }
+
+  // ── Helpers de audio ─────────────────────────────────────────────
+  function float32ToInt16(f32) {
+    const out = new Int16Array(f32.length);
+    for (let i = 0; i < f32.length; i++) {
+      let s = Math.max(-1, Math.min(1, f32[i]));
+      out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return out;
+  }
+
+  function uint8ToBase64(uint8) {
+    let binary = '';
+    for (let i = 0; i < uint8.byteLength; i++) binary += String.fromCharCode(uint8[i]);
+    return btoa(binary);
+  }
+
+  // ── Waveform visualizer ──────────────────────────────────────────
+  function startWaveformLoop() {
+    const buf = new Uint8Array(analyserNode ? analyserNode.frequencyBinCount : 512);
+
+    function draw() {
+      rafId = requestAnimationFrame(draw);
+      if (!analyserNode) return;
+
+      analyserNode.getByteTimeDomainData(buf);
+
+      const W = canvas.width  = canvas.offsetWidth  * window.devicePixelRatio;
+      const H = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+
+      ctx2d.clearRect(0, 0, W, H);
+
+      // Fondo sutil
+      ctx2d.fillStyle = 'rgba(0,0,0,0.0)';
+      ctx2d.fillRect(0, 0, W, H);
+
+      // Línea de onda
+      ctx2d.lineWidth   = 2 * window.devicePixelRatio;
+      ctx2d.strokeStyle = isRecording ? '#38bdf8' : '#1e293b';
+      ctx2d.shadowColor = '#38bdf8';
+      ctx2d.shadowBlur  = isRecording ? 8 : 0;
+      ctx2d.beginPath();
+
+      const sliceW = W / buf.length;
+      let x = 0;
+      for (let i = 0; i < buf.length; i++) {
+        const v = buf[i] / 128.0;
+        const y = v * H / 2;
+        if (i === 0) ctx2d.moveTo(x, y);
+        else         ctx2d.lineTo(x, y);
+        x += sliceW;
+      }
+      ctx2d.lineTo(W, H / 2);
+      ctx2d.stroke();
+      ctx2d.shadowBlur = 0;
+    }
+    draw();
+  }
+
+  function clearCanvas() {
+    const W = canvas.offsetWidth  * window.devicePixelRatio;
+    const H = canvas.offsetHeight * window.devicePixelRatio;
+    canvas.width  = W;
+    canvas.height = H;
+    ctx2d.clearRect(0, 0, W, H);
+    // Dibuja línea plana
+    ctx2d.lineWidth   = 2 * window.devicePixelRatio;
+    ctx2d.strokeStyle = 'rgba(56,189,248,0.15)';
+    ctx2d.beginPath();
+    ctx2d.moveTo(0, H / 2);
+    ctx2d.lineTo(W, H / 2);
+    ctx2d.stroke();
+  }
+
+  // init canvas
+  clearCanvas();
+
+  // ── Estado visual ────────────────────────────────────────────────
+  function setStatus(state) {
+    // Quitar clases previas
+    ['listening','processing','speaking'].forEach(s => {
+      micBtn.classList.remove(s);
+      micRingWrap.classList.remove(s);
+      statusLabel.classList.remove(s);
+    });
+
+    const labels = {
+      idle:       'Listo',
+      listening:  'Escuchando…',
+      processing: 'Procesando…',
+      speaking:   'Respondiendo…'
+    };
+
+    const icons = {
+      idle:       'fa-microphone',
+      listening:  'fa-stop',
+      processing: 'fa-circle-notch fa-spin',
+      speaking:   'fa-volume-up'
+    };
+
+    statusLabel.textContent = labels[state] || state;
+
+    // Limpiar icono
+    micIcon.className = 'fas ' + (icons[state] || 'fa-microphone');
+
+    if (state !== 'idle') {
+      micBtn.classList.add(state);
+      micRingWrap.classList.add(state);
+      statusLabel.classList.add(state);
+    }
+  }
+
+  // ── Diálogo ──────────────────────────────────────────────────────
+  function addBubble(text, role) {
+    if (emptyHint) emptyHint.style.display = 'none';
+
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${role}`;
+
+    const now = new Date().toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+    const label = role === 'user' ? 'Tú' : 'Neo';
+
+    bubble.innerHTML = `
+      <div>${escapeHtml(text)}</div>
+      <div class="bubble-meta">${label} · ${now}</div>
+    `;
+    dialogueEl.appendChild(bubble);
+    dialogueEl.scrollTop = dialogueEl.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  clearBtn.addEventListener('click', () => {
+    dialogueEl.innerHTML = '';
+    dialogueEl.appendChild(emptyHint);
+    emptyHint.style.display = '';
+  });
+
+})();
 </script>
 {% endblock %}
