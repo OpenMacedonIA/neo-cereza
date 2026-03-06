@@ -222,11 +222,15 @@ if __name__ == "__main__":
         # mkcert genera los certs en el CWD donde se ejecuta.
         # Buscamos en el dir padre de TangerineUI (la raíz del proyecto)
         # y también en el CWD actual.
+        # Buscar en todos los homes /home/*/WatermelonD (funciona con cualquier usuario de VM)
+        extra_dirs = glob.glob('/home/*/WatermelonD') + glob.glob('/root/WatermelonD')
         search_dirs = [
-            os.path.join(os.path.dirname(__file__), '..'),  # raíz WatermelonD
-            os.path.dirname(__file__),                        # TangerineUI/
-            os.path.expanduser('~'),                          # home
-        ]
+            os.path.join(os.path.dirname(__file__), '..'),   # raíz ~/Música/WatermelonD
+            os.path.dirname(__file__),                         # TangerineUI/
+            os.path.expanduser('~/WatermelonD'),               # ~/WatermelonD del usuario actual
+            os.path.expanduser('~'),                           # home dir
+            os.getcwd(),                                       # directorio de trabajo actual
+        ] + extra_dirs
         for d in search_dirs:
             # mkcert nombra la clave como *-key.pem
             keys = glob.glob(os.path.join(d, '*-key.pem'))

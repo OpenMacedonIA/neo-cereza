@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>NEO // FACE</title>
 
     <!-- Dependencias -->
@@ -561,6 +562,279 @@
                 addTerminalLine(data.msg);
             }
         });
+
+        // ═══════════════════════════════════════════════════════════
+        //  VOZ DESDE NAVEGADOR — Browser Mic → PCM16 → /api/voice/audio
+        // ═══════════════════════════════════════════════════════════
+        const TARGET_RATE = 16000;
+        const FRAME_SIZE = 2048;
+        const SILENCE_GRACE = 900;   // ms de silencio para cortar
+        const MIN_AUDIO_MS = 250;   // duración mínima que vale la pena enviar
+
+        let audioCtx = null;
+        let sourceNode = null;
+        let processorNode = null;
+        let analyserNode = null;
+        let mediaStream = null;
+        let isRecording = false;
+        let pcmChunks = [];
+        let silenceTimer = null;
+        let recordStart = 0;
+        let vadActive = false;
+        let vadThreshold = 6; // % RMS — ajustar si hay ruido ambiente
+
+        // ── Botón mic (esquina inferior derecha, semitransparente) ──
+        const micBtnFace = document.createElement('button');
+        micBtnFace.id = 'mic-face-btn';
+        micBtnFace.innerHTML = '🎙';
+        micBtnFace.title = 'Toca para hablar con Neo';
+        Object.assign(micBtnFace.style, {
+            position: 'fixed',
+            bottom: 'clamp(28px, 5vw, 60px)',
+            right: 'clamp(28px, 5vw, 60px)',
+            width: '54px', height: '54px',
+            borderRadius: '50%',
+            border: '1px solid rgba(74,222,128,0.35)',
+            background: 'rgba(0,0,0,0.55)',
+            color: 'rgba(74,222,128,0.7)',
+            fontSize: '22px',
+            cursor: 'pointer',
+            zIndex: '20',
+            backdropFilter: 'blur(6px)',
+            transition: 'all 0.25s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: '0.5',
+        });
+        document.body.appendChild(micBtnFace);
+
+        // Hover
+        micBtnFace.addEventListener('mouseenter', () => micBtnFace.style.opacity = '1');
+        micBtnFace.addEventListener('mouseleave', () => {
+            if (!isRecording) micBtnFace.style.opacity = '0.5';
+        });
+
+        function setMicState(state) {
+            // state: 'idle' | 'recording' | 'processing'
+            if (state === 'recording') {
+                micBtnFace.innerHTML = '⏹';
+                micBtnFace.style.opacity = '1';
+                micBtnFace.style.borderColor = 'rgba(239,68,68,0.8)';
+                micBtnFace.style.color = 'rgba(239,68,68,0.9)';
+                micBtnFace.style.boxShadow = '0 0 18px rgba(239,68,68,0.4)';
+            } else if (state === 'processing') {
+                micBtnFace.innerHTML = '⌛';
+                micBtnFace.style.opacity = '1';
+                micBtnFace.style.borderColor = 'rgba(251,191,36,0.8)';
+                micBtnFace.style.color = 'rgba(251,191,36,0.9)';
+                micBtnFace.style.boxShadow = '0 0 18px rgba(251,191,36,0.3)';
+            } else {
+                micBtnFace.innerHTML = '🎙';
+                micBtnFace.style.opacity = '0.5';
+                micBtnFace.style.borderColor = 'rgba(74,222,128,0.35)';
+                micBtnFace.style.color = 'rgba(74,222,128,0.7)';
+                micBtnFace.style.boxShadow = 'none';
+            }
+        }
+
+        // ── Click en el botón o en la cara para activar/desactivar ──
+        micBtnFace.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMic();
+        });
+        // Clic en la pantalla (fuera del botón webui) también activa
+        document.getElementById('face').addEventListener('click', () => toggleMic());
+
+        async function toggleMic() {
+            if (isRecording) {
+                stopRecording(true);
+            } else {
+                await startRecording();
+            }
+        }
+
+        // ── SocketIO: cuando Neo responde → cambiar cara ──────────
+        socket.on('stt:result', (data) => {
+            // Texto reconocido → cara pensando
+            setExpression('thinking');
+        });
+        socket.on('ai:response', (data) => {
+            // Respuesta de Neo → volver a idle después de speaking
+            // (face_update ya gestiona speaking, pero por si acaso)
+            setTimeout(() => setExpression('idle'), 200);
+        });
+
+        // ── Audio pipeline ────────────────────────────────────────
+        async function startRecording() {
+            if (isRecording) return;
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } catch (err) {
+                console.error('Mic error:', err);
+                showLabel('SIN MICRÓFONO', 3000);
+                return;
+            }
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: TARGET_RATE });
+            sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+            analyserNode = audioCtx.createAnalyser();
+            analyserNode.fftSize = 512;
+            processorNode = audioCtx.createScriptProcessor(FRAME_SIZE, 1, 1);
+
+            sourceNode.connect(analyserNode);
+            sourceNode.connect(processorNode);
+            processorNode.connect(audioCtx.destination);
+
+            pcmChunks = [];
+            isRecording = true;
+            vadActive = false;
+            recordStart = Date.now();
+            clearSilTimer();
+
+            processorNode.onaudioprocess = onAudioProcess;
+
+            setExpression('listening');
+            setMicState('recording');
+            showLabel('ESCUCHANDO');
+
+            // Alimentar la ola con los datos reales del micro
+            animateRealWave();
+        }
+
+        let realWaveRaf = null;
+        function animateRealWave() {
+            if (!analyserNode) return;
+            const buf = new Uint8Array(analyserNode.frequencyBinCount);
+            const totalH = waveEl.clientHeight || 80;
+            waveEl.classList.add('visible');
+
+            function tick() {
+                if (!isRecording) { stopWave(); return; }
+                analyserNode.getByteTimeDomainData(buf);
+                bars.forEach((bar, i) => {
+                    // Mapear muestra PCM a altura
+                    const idx = Math.floor(i * buf.length / bars.length);
+                    const v = Math.abs((buf[idx] / 128.0) - 1.0); // 0..1
+                    bar.style.height = Math.max(4, v * totalH * 1.6) + 'px';
+                });
+                realWaveRaf = requestAnimationFrame(tick);
+            }
+            tick();
+        }
+
+        function onAudioProcess(e) {
+            const f32 = e.inputBuffer.getChannelData(0);
+            let sum = 0;
+            for (let i = 0; i < f32.length; i++) sum += f32[i] * f32[i];
+            const rms = Math.sqrt(sum / f32.length) * 100;
+
+            pcmChunks.push(float32ToInt16(f32));
+
+            // VAD
+            if (rms > vadThreshold) {
+                vadActive = true;
+                clearSilTimer();
+            } else if (vadActive) {
+                schedSilence();
+            }
+        }
+
+        function schedSilence() {
+            if (silenceTimer) return;
+            silenceTimer = setTimeout(() => {
+                silenceTimer = null;
+                if (isRecording) stopRecording(true);
+            }, SILENCE_GRACE);
+        }
+        function clearSilTimer() {
+            if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+        }
+
+        function stopRecording(send = false) {
+            if (!isRecording) return;
+            isRecording = false;
+            vadActive = false;
+            clearSilTimer();
+            if (realWaveRaf) { cancelAnimationFrame(realWaveRaf); realWaveRaf = null; }
+
+            if (processorNode) { processorNode.disconnect(); processorNode.onaudioprocess = null; }
+            if (sourceNode) sourceNode.disconnect();
+            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+            if (audioCtx) audioCtx.close();
+            processorNode = sourceNode = analyserNode = mediaStream = audioCtx = null;
+
+            const elapsed = Date.now() - recordStart;
+
+            if (send && pcmChunks.length && elapsed >= MIN_AUDIO_MS) {
+                setExpression('thinking');
+                setMicState('processing');
+                showLabel('PROCESANDO');
+                sendAudio(pcmChunks);
+            } else {
+                setExpression('idle');
+                setMicState('idle');
+                hideLabel();
+            }
+            pcmChunks = [];
+        }
+
+        async function sendAudio(chunks) {
+            const total = chunks.reduce((a, c) => a + c.length, 0);
+            const pcm = new Int16Array(total);
+            let off = 0;
+            for (const c of chunks) { pcm.set(c, off); off += c.length; }
+
+            const bytes = new Uint8Array(pcm.buffer);
+            const b64 = uint8ToB64(bytes);
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            try {
+                const resp = await fetch('/api/voice/audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                    body: JSON.stringify({ audio: b64, rate: TARGET_RATE })
+                });
+                const json = await resp.json();
+                if (json.status !== 'ok') {
+                    console.error('voice/audio error:', json);
+                    setExpression('sad');
+                    showLabel('ERROR: ' + (json.message || '?'), 3000);
+                    setMicState('idle');
+                }
+                // Si ok: el STT emitirá stt:result → face_update:thinking → face_update:speaking
+            } catch (err) {
+                console.error('sendAudio fetch error:', err);
+                setExpression('sad');
+                showLabel('SIN CONEXION', 3000);
+                setMicState('idle');
+            }
+        }
+
+        // ── Helpers ───────────────────────────────────────────────
+        function float32ToInt16(f32) {
+            const out = new Int16Array(f32.length);
+            for (let i = 0; i < f32.length; i++) {
+                const s = Math.max(-1, Math.min(1, f32[i]));
+                out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return out;
+        }
+
+        function uint8ToB64(u8) {
+            let bin = '';
+            for (let i = 0; i < u8.byteLength; i++) bin += String.fromCharCode(u8[i]);
+            return btoa(bin);
+        }
+
+        // ── CSRF token: face.html no extiende base.html, lo obtenemos del servidor
+        // Si no hay meta tag, el endpoint /api/voice/audio necesita el token por cookie.
+        // Lo añadimos como meta tag dinámico al cargar.
+        fetch('/api/audio/status').then(r => {
+            // Este fetch hace que Flask envíe la cookie de sesión con el CSRF.
+            // No necesitamos hacer nada más — el token está en la cookie del proxy Flask.
+        }).catch(() => { });
+
     </script>
 </body>
 
