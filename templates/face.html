@@ -668,11 +668,24 @@
         // ── Audio pipeline ────────────────────────────────────────
         async function startRecording() {
             if (isRecording) return;
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.error('mediaDevices API not available (requires HTTPS)');
+                setExpression('sad');
+                showLabel('HTTPS / CERT REQUERIDO', 4000);
+                return;
+            }
+
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
             } catch (err) {
                 console.error('Mic error:', err);
-                showLabel('SIN MICRÓFONO', 3000);
+                setExpression('sad');
+                if (err.name === 'NotAllowedError') {
+                    showLabel('PERMISO DENEGADO', 3000);
+                } else {
+                    showLabel('SIN MICRÓFONO', 3000);
+                }
                 return;
             }
 
