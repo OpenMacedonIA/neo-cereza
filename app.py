@@ -210,7 +210,49 @@ def api_proxy(path):
         return jsonify({'success': False, 'message': f"Proxy Error: {e}"}), 500
 
 if __name__ == "__main__":
-    print(f"[START] Neo Headless Client starting...")
-    print(f"[LINK] Connected to NeoCore at: {NEO_API_URL}")
-    print(f"[WEB] Web Interface at: http://0.0.0.0:8000")
-    app.run(host='0.0.0.0', port=8000)
+    import glob
+
+    # ── Detección automática de certificados SSL (mkcert) ──────────────
+    # Busca en variables de entorno primero, luego en el directorio padre
+    # del proyecto (donde mkcert genera los archivos por defecto).
+    ssl_cert = os.environ.get('SSL_CERT')
+    ssl_key  = os.environ.get('SSL_KEY')
+
+    if not ssl_cert or not ssl_key:
+        # mkcert genera los certs en el CWD donde se ejecuta.
+        # Buscamos en el dir padre de TangerineUI (la raíz del proyecto)
+        # y también en el CWD actual.
+        search_dirs = [
+            os.path.join(os.path.dirname(__file__), '..'),  # raíz WatermelonD
+            os.path.dirname(__file__),                        # TangerineUI/
+            os.path.expanduser('~'),                          # home
+        ]
+        for d in search_dirs:
+            # mkcert nombra la clave como *-key.pem
+            keys = glob.glob(os.path.join(d, '*-key.pem'))
+            if keys:
+                ssl_key  = keys[0]
+                # El cert tiene el mismo prefijo sin '-key'
+                ssl_cert = ssl_key.replace('-key.pem', '.pem')
+                if os.path.exists(ssl_cert):
+                    break
+                else:
+                    ssl_cert = ssl_key = None  # par incompleto, seguir buscando
+
+    # ── Arranque ───────────────────────────────────────────────────────
+    if ssl_cert and ssl_key and os.path.exists(ssl_cert) and os.path.exists(ssl_key):
+        port = int(os.environ.get('PORT', 8443))
+        print(f"[START] Neo Headless Client starting (HTTPS)...")
+        print(f"[LINK]  Connected to NeoCore at: {NEO_API_URL}")
+        print(f"[CERT]  Certificate : {ssl_cert}")
+        print(f"[CERT]  Key          : {ssl_key}")
+        print(f"[WEB]  Web Interface at: https://0.0.0.0:{port}")
+        app.run(host='0.0.0.0', port=port, ssl_context=(ssl_cert, ssl_key))
+    else:
+        port = int(os.environ.get('PORT', 8000))
+        print(f"[START] Neo Headless Client starting (HTTP — no SSL certs found)...")
+        print(f"[LINK]  Connected to NeoCore at: {NEO_API_URL}")
+        print(f"[WARN]  getUserMedia() solo funcionará en localhost sin HTTPS.")
+        print(f"[WEB]  Web Interface at: http://0.0.0.0:{port}")
+        app.run(host='0.0.0.0', port=port)
+
