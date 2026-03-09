@@ -312,6 +312,31 @@
         .speaking .bracket {
             animation: bracketSpeaking 0.5s infinite ease-in-out;
         }
+
+        /* ─ EASTER EGG: Notas musicales ─────────────────────────── */
+        @keyframes noteFloat {
+            0%   { transform: translateY(0)   translateX(0)   rotate(0deg)  scale(1);   opacity: 1; }
+            40%  { transform: translateY(-60px) translateX(var(--nx)) rotate(var(--nr)) scale(1.2); opacity: 0.9; }
+            100% { transform: translateY(-160px) translateX(var(--nx2)) rotate(calc(var(--nr)*2)) scale(0.6); opacity: 0; }
+        }
+        .music-note {
+            position: fixed;
+            font-size: clamp(22px, 4vw, 52px);
+            pointer-events: none;
+            animation: noteFloat var(--nd, 1.4s) ease-out forwards;
+            z-index: 50;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+        /* Cara cuando hay música */
+        .face-container.music-egg #expression {
+            animation: pulse 0.6s infinite alternate;
+            color: #f472b6;
+            text-shadow: 0 0 20px #f472b6, 0 0 60px #f472b6;
+        }
+        .face-container.music-egg .bracket {
+            border-color: #f472b6;
+            filter: drop-shadow(0 0 14px #f472b6);
+        }
     </style>
 </head>
 
@@ -525,10 +550,73 @@
                 setExpression('listening');
             } else if (state === 'speaking') {
                 setExpression('speaking');
+            } else if (state === 'music_egg') {
+                triggerMusicEgg();
             } else {
                 setExpression(state);
             }
         });
+
+        // ── EASTER EGG: Notas Musicales ──────────────────────────────
+        const NOTES = ['\u266a', '\u266b', '\u266c', '\u2669', '\u266d', '\uD83C\uDFB5', '\uD83C\uDFB6'];
+        const NOTE_COLORS = ['#f472b6','#a78bfa','#34d399','#fbbf24','#60a5fa','#fb923c'];
+        let musicEggTimer = null;
+
+        function triggerMusicEgg() {
+            // Cambiar expresión a cara cantando
+            faceEl.className = 'face-container music-egg';
+            expressionEl.textContent = '\u266a \u266b';
+            showLabel('\uD83C\uDFB5 DETECTANDO MÚSICA \uD83C\uDFB5', 4000);
+
+            // Lanzar notas en oleadas
+            const origin = expressionEl.getBoundingClientRect();
+            const cx = origin.left + origin.width / 2;
+            const cy = origin.top + origin.height / 2;
+
+            let launched = 0;
+            const maxNotes = 18;
+            const interval = setInterval(() => {
+                if (launched >= maxNotes) { clearInterval(interval); return; }
+                spawnNote(cx, cy);
+                launched++;
+            }, 120);
+
+            // Volver a idle después de 4s
+            if (musicEggTimer) clearTimeout(musicEggTimer);
+            musicEggTimer = setTimeout(() => {
+                faceEl.className = 'face-container';
+                setExpression('idle');
+            }, 4200);
+        }
+
+        function spawnNote(cx, cy) {
+            const note = document.createElement('span');
+            note.className = 'music-note';
+            note.textContent = NOTES[Math.floor(Math.random() * NOTES.length)];
+            const color = NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)];
+            note.style.color = color;
+
+            // Posición inicial alrededor de la "boca" (bajo los ojos)
+            const spread = 80;
+            const startX = cx + (Math.random() - 0.5) * spread;
+            const startY = cy + 40 + Math.random() * 30;
+            note.style.left = startX + 'px';
+            note.style.top  = startY + 'px';
+
+            // Variables CSS para la trayectoria aleatoria
+            const nx  = (Math.random() - 0.5) * 120;
+            const nx2 = nx + (Math.random() - 0.5) * 60;
+            const nr  = (Math.random() - 0.5) * 40 + 'deg';
+            const nd  = (1.1 + Math.random() * 0.8) + 's';
+            note.style.setProperty('--nx',  nx  + 'px');
+            note.style.setProperty('--nx2', nx2 + 'px');
+            note.style.setProperty('--nr',  nr);
+            note.style.setProperty('--nd',  nd);
+
+            document.body.appendChild(note);
+            // Limpiar elemento después de la animación
+            note.addEventListener('animationend', () => note.remove());
+        }
 
         socket.on('emotion_update', (data) => {
             const emotion = data.emotion;
