@@ -5,6 +5,84 @@
     <!-- Rellenado por JS -->
 </div>
 
+<!-- Fila: Bluetooth + Hotspot -->
+<div class="row g-4 mb-4">
+
+    <!-- Bluetooth -->
+    <div class="col-md-4">
+        <div class="card h-100" id="bt-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fab fa-bluetooth me-2"></i> Bluetooth</h5>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="bt-toggle" role="switch"
+                           onchange="toggleBluetooth()" style="width:2.5em; height:1.3em; cursor:pointer;">
+                </div>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="min-height:100px;">
+                <div id="bt-status-text" class="text-center text-muted">
+                    <i class="fas fa-spinner fa-spin fa-2x mb-2"></i><br>
+                    <small>Comprobando estado...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hotspot -->
+    <div class="col-md-8">
+        <div class="card h-100" id="hotspot-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-broadcast-tower me-2"></i> Punto de Acceso WiFi</h5>
+                <button id="hotspot-btn" onclick="toggleHotspot()" class="btn btn-sm btn-outline-warning" disabled>
+                    <i class="fas fa-spinner fa-spin" id="hotspot-btn-icon"></i>
+                    <span id="hotspot-btn-label">Cargando...</span>
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Estado: sin WiFi → aviso automático -->
+                <div id="hotspot-no-wifi-alert" class="alert alert-warning d-none mb-3" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Sin conexión WiFi.</strong> Puedes activar el punto de acceso para que otros dispositivos se conecten a Neo.
+                </div>
+                <!-- Panel de credenciales + QR (visible cuando hotspot activo) -->
+                <div id="hotspot-active-panel" class="d-none">
+                    <div class="row align-items-center g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded" style="background:rgba(255,193,7,0.08); border:1px solid rgba(255,193,7,0.3);">
+                                <p class="mb-1 text-muted small">SSID</p>
+                                <h5 class="mb-2 text-warning fw-bold" id="hs-ssid-label">—</h5>
+                                <p class="mb-1 text-muted small">Contraseña</p>
+                                <div class="d-flex align-items-center gap-2">
+                                    <code id="hs-pass-label" class="fs-6 text-light">—</code>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyHotspotPass()" title="Copiar contraseña">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <p class="mt-3 mb-0 text-muted small">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Conéctate a esta red desde otro dispositivo o escanea el QR.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div class="d-inline-block p-2 bg-white rounded shadow-sm">
+                                <canvas id="hotspot-qr" width="150" height="150"></canvas>
+                            </div>
+                            <p class="text-muted small mt-2">Escanea para conectar</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Estado inactivo -->
+                <div id="hotspot-inactive-panel" class="text-center text-muted py-3">
+                    <i class="fas fa-wifi-slash fa-2x mb-2 opacity-25"></i>
+                    <p class="mb-0">El punto de acceso está desactivado.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Fila principal: Escáner WiFi + Herramientas -->
 <div class="row g-4">
     <!-- Escáner WiFi -->
     <div class="col-md-8">
@@ -48,7 +126,7 @@
     </div>
 </div>
 
-<!-- Modal de Conexión -->
+<!-- Modal de Conexión WiFi -->
 <div class="modal fade" id="connectModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark border-secondary">
@@ -74,22 +152,26 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- QRCode.js (sin dependencias) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
 <script>
     let currentSSID = '';
     const connectModal = new bootstrap.Modal(document.getElementById('connectModal'));
+    let _hotspotSSID = '', _hotspotPass = '';
+
+    // ── Red ───────────────────────────────────────────────────────────────────
 
     function updateNetwork() {
         fetch('/api/network')
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 const container = document.getElementById('network-cards');
                 container.innerHTML = '';
-
                 data.forEach(iface => {
                     const statusColor = iface.is_up ? 'success' : 'danger';
                     const icon = iface.name === 'wlan0' ? 'fa-wifi' : 'fa-network-wired';
-
-                    const card = `
+                    container.innerHTML += `
                         <div class="col-md-4">
                             <div class="card h-100 border-${statusColor} border-opacity-25">
                                 <div class="card-body d-flex align-items-center">
@@ -103,17 +185,16 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
-                    container.innerHTML += card;
+                        </div>`;
                 });
             });
     }
 
+    // ── WiFi Scan ─────────────────────────────────────────────────────────────
+
     function scanWifi() {
         const listDiv = document.getElementById('wifi-list');
         const btn = document.getElementById('scan-btn');
-
         listDiv.innerHTML = '<div class="col-12 text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Escaneando redes...</p></div>';
         btn.disabled = true;
 
@@ -122,35 +203,19 @@
             .then(data => {
                 listDiv.innerHTML = '';
                 btn.disabled = false;
-
-                // Manejar respuesta de error del backend
                 if (data.error) {
-                    listDiv.innerHTML = `
-                        <div class="col-12">
-                            <div class="alert alert-warning" role="alert">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>No se pudo escanear WiFi</strong><br>
-                                <small>${data.error}</small><br>
-                                <small class="text-muted mt-2">
-                                    Asegúrate de que network-manager, wireless-tools o iw estén instalados.
-                                    Ejecuta: <code>sudo apt install network-manager wireless-tools iw</code>
-                                </small>
-                            </div>
-                        </div>
-                    `;
+                    listDiv.innerHTML = `<div class="col-12"><div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i><strong>No se pudo escanear WiFi</strong><br><small>${data.error}</small></div></div>`;
                     return;
                 }
-
                 if (data.length === 0) {
                     listDiv.innerHTML = '<div class="col-12 text-center text-muted py-4">No se encontraron redes.</div>';
                     return;
                 }
-
                 data.forEach(net => {
-                    const signalColor = net.signal > 70 ? 'success' : (net.signal > 40 ? 'warning' : 'danger');
-                    const card = `
+                    const sigColor = net.signal > 70 ? 'success' : (net.signal > 40 ? 'warning' : 'danger');
+                    listDiv.innerHTML += `
                         <div class="col-md-6 col-lg-4">
-                            <div class="card h-100 bg-dark border-secondary hover-card" style="cursor: pointer;" onclick="openConnectModal('${net.ssid}')">
+                            <div class="card h-100 bg-dark border-secondary hover-card" style="cursor:pointer;" onclick="openConnectModal('${net.ssid}')">
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="card-title mb-0 text-truncate" title="${net.ssid}">${net.ssid}</h6>
@@ -158,25 +223,15 @@
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center small text-muted">
                                         <span><i class="fas fa-lock me-1"></i> ${net.security}</span>
-                                        <span class="text-${signalColor}"><i class="fas fa-signal"></i> ${net.signal}%</span>
+                                        <span class="text-${sigColor}"><i class="fas fa-signal"></i> ${net.signal}%</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
-                    listDiv.innerHTML += card;
+                        </div>`;
                 });
             })
             .catch(err => {
-                listDiv.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-danger" role="alert">
-                            <i class="fas fa-times-circle me-2"></i>
-                            <strong>Error de conexión</strong><br>
-                            <small>No se pudo comunicar con el servidor: ${err.message}</small>
-                        </div>
-                    </div>
-                `;
+                listDiv.innerHTML = `<div class="col-12"><div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i><strong>Error de conexión</strong><br><small>${err.message}</small></div></div>`;
                 btn.disabled = false;
             });
     }
@@ -194,76 +249,171 @@
         const password = document.getElementById('wifi-password').value;
         const statusDiv = document.getElementById('connect-status');
         const btn = document.getElementById('connect-btn');
-
-        if (!password) {
-            statusDiv.innerHTML = '<span class="text-warning">Introduce la contraseña.</span>';
-            return;
-        }
-
+        if (!password) { statusDiv.innerHTML = '<span class="text-warning">Introduce la contraseña.</span>'; return; }
         statusDiv.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin"></i> Conectando...</span>';
         btn.disabled = true;
-
         fetch('/api/wifi/connect', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ssid: currentSSID, password: password })
+            body: JSON.stringify({ ssid: currentSSID, password })
         })
-            .then(res => res.json())
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            if (data.success) {
+                statusDiv.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Conectado correctamente.</span>';
+                setTimeout(() => { connectModal.hide(); updateNetwork(); scanWifi(); }, 1500);
+            } else {
+                statusDiv.innerHTML = `<span class="text-danger">Error: ${data.message}</span>`;
+            }
+        })
+        .catch(err => { btn.disabled = false; statusDiv.innerHTML = `<span class="text-danger">Error: ${err}</span>`; });
+    }
+
+    // ── Bluetooth ─────────────────────────────────────────────────────────────
+
+    function refreshBluetooth() {
+        fetch('/api/bluetooth/status')
+            .then(r => r.json())
             .then(data => {
-                btn.disabled = false;
-                if (data.success) {
-                    statusDiv.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Conectado correctamente.</span>';
-                    setTimeout(() => {
-                        connectModal.hide();
-                        updateNetwork();
-                        scanWifi();
-                    }, 1500);
+                const toggle = document.getElementById('bt-toggle');
+                const statusText = document.getElementById('bt-status-text');
+                toggle.checked = data.enabled;
+                if (data.enabled) {
+                    statusText.innerHTML = '<i class="fab fa-bluetooth fa-2x text-primary mb-1"></i><br><span class="text-primary fw-bold">Activo</span>';
                 } else {
-                    statusDiv.innerHTML = `<span class="text-danger">Error: ${data.message}</span>`;
+                    statusText.innerHTML = '<i class="fab fa-bluetooth fa-2x text-secondary mb-1"></i><br><span class="text-muted">Desactivado</span>';
                 }
             })
-            .catch(err => {
-                btn.disabled = false;
-                statusDiv.innerHTML = `<span class="text-danger">Error: ${err}</span>`;
+            .catch(() => {
+                document.getElementById('bt-status-text').innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i><br><small class="text-muted">No disponible</small>';
             });
     }
+
+    function toggleBluetooth() {
+        const statusText = document.getElementById('bt-status-text');
+        statusText.innerHTML = '<i class="fas fa-spinner fa-spin fa-2x text-primary mb-1"></i><br><small class="text-muted">Cambiando...</small>';
+        fetch('/api/bluetooth/toggle', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    refreshBluetooth();
+                } else {
+                    statusText.innerHTML = `<i class="fas fa-times-circle text-danger"></i><br><small class="text-danger">${data.error || 'Error'}</small>`;
+                    // revertir toggle visualmente
+                    setTimeout(refreshBluetooth, 1000);
+                }
+            });
+    }
+
+    // ── Hotspot ───────────────────────────────────────────────────────────────
+
+    function renderHotspotQR(ssid, pass) {
+        const canvas = document.getElementById('hotspot-qr');
+        // Formato estándar WiFi para QR
+        const wifiString = `WIFI:T:WPA;S:${ssid};P:${pass};;`;
+        QRCode.toCanvas(canvas, wifiString, { width: 150, margin: 1, color: { dark: '#000000', light: '#ffffff' } });
+    }
+
+    function applyHotspotState(data) {
+        const btn        = document.getElementById('hotspot-btn');
+        const btnIcon    = document.getElementById('hotspot-btn-icon');
+        const btnLabel   = document.getElementById('hotspot-btn-label');
+        const activePanel   = document.getElementById('hotspot-active-panel');
+        const inactivePanel = document.getElementById('hotspot-inactive-panel');
+        const noWifiAlert   = document.getElementById('hotspot-no-wifi-alert');
+
+        btn.disabled = false;
+        _hotspotSSID = data.ssid;
+        _hotspotPass = data.password;
+
+        // Alerta sin WiFi (solo si hotspot inactivo)
+        if (!data.wifi_connected && !data.hotspot_active) {
+            noWifiAlert.classList.remove('d-none');
+        } else {
+            noWifiAlert.classList.add('d-none');
+        }
+
+        if (data.hotspot_active) {
+            btn.className = 'btn btn-sm btn-danger';
+            btnIcon.className = 'fas fa-stop me-1';
+            btnLabel.textContent = 'Desactivar Hotspot';
+            activePanel.classList.remove('d-none');
+            inactivePanel.classList.add('d-none');
+            document.getElementById('hs-ssid-label').textContent = data.ssid;
+            document.getElementById('hs-pass-label').textContent = data.password;
+            renderHotspotQR(data.ssid, data.password);
+        } else {
+            btn.className = 'btn btn-sm btn-outline-warning';
+            btnIcon.className = 'fas fa-play me-1';
+            btnLabel.textContent = 'Activar Hotspot';
+            activePanel.classList.add('d-none');
+            inactivePanel.classList.remove('d-none');
+        }
+    }
+
+    function refreshHotspot() {
+        fetch('/api/hotspot/status')
+            .then(r => r.json())
+            .then(applyHotspotState)
+            .catch(() => {
+                document.getElementById('hotspot-btn').disabled = false;
+                document.getElementById('hotspot-btn-label').textContent = 'Error';
+            });
+    }
+
+    function toggleHotspot() {
+        const btn     = document.getElementById('hotspot-btn');
+        const btnIcon = document.getElementById('hotspot-btn-icon');
+        btn.disabled  = true;
+        btnIcon.className = 'fas fa-spinner fa-spin me-1';
+        fetch('/api/hotspot/toggle', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    refreshHotspot();
+                } else {
+                    alert('Error: ' + (data.message || data.error));
+                    refreshHotspot();
+                }
+            })
+            .catch(err => { alert('Error de red: ' + err); refreshHotspot(); });
+    }
+
+    function copyHotspotPass() {
+        navigator.clipboard.writeText(_hotspotPass).then(() => {
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-check text-success"></i>';
+            setTimeout(() => btn.innerHTML = '<i class="fas fa-copy"></i>', 1500);
+        });
+    }
+
+    // ── Herramientas ──────────────────────────────────────────────────────────
 
     function runPing() {
         const outputDiv = document.getElementById('ping-result');
         outputDiv.innerText = "Ejecutando ping...";
-
         fetch('/api/terminal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ command: 'ping -c 4 google.com' })
-        })
-            .then(res => res.json())
-            .then(data => {
-                outputDiv.innerText = data.output;
-            });
+        }).then(r => r.json()).then(data => { outputDiv.innerText = data.output; });
     }
 
     function runSpeedTest() {
         const outputDiv = document.getElementById('ping-result');
         const btn = document.getElementById('speedtest-btn');
-
         outputDiv.innerText = "Ejecutando test de velocidad (puede tardar unos 30s)...";
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Midiendo...';
-
-        fetch('/api/network/speedtest', {
-            method: 'POST'
-        })
-            .then(res => res.json())
+        fetch('/api/network/speedtest', { method: 'POST' })
+            .then(r => r.json())
             .then(data => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-tachometer-alt me-2"></i> Test Velocidad';
-
-                if (data.error) {
-                    outputDiv.innerText = "Error: " + data.error;
-                } else {
-                    outputDiv.innerText = `Ping: ${data.ping}\nDescarga: ${data.download}\nSubida: ${data.upload}`;
-                }
+                outputDiv.innerText = data.error
+                    ? "Error: " + data.error
+                    : `Ping: ${data.ping}\nDescarga: ${data.download}\nSubida: ${data.upload}`;
             })
             .catch(err => {
                 btn.disabled = false;
@@ -272,7 +422,10 @@
             });
     }
 
+    // ── Init ──────────────────────────────────────────────────────────────────
     updateNetwork();
+    refreshBluetooth();
+    refreshHotspot();
 </script>
 
 <style>
@@ -281,5 +434,6 @@
         transform: translateY(-2px);
         transition: all 0.2s;
     }
+    #hotspot-qr { display: block; }
 </style>
 {% endblock %}
