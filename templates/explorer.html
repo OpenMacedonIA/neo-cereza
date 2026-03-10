@@ -6,30 +6,55 @@
     <div class="card file-tree-card">
         <div class="card-header pb-2">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h3 class="m-0">Explorador</h3>
-                <span class="badge bg-secondary" id="item-count">0 items</span>
+                <h3 class="m-0"><i class="fas fa-folder-open me-2 text-warning"></i>Explorador</h3>
+                <span class="badge bg-secondary" id="item-count">—</span>
             </div>
-            <input type="text" id="file-search" class="form-control form-control-sm bg-dark text-light border-secondary"
-                placeholder="Buscar archivo...">
-            <div class="breadcrumb mt-2 text-muted text-truncate" id="breadcrumb">/</div>
+            <input type="text" id="file-search" class="form-control form-control-sm mb-2"
+                placeholder="🔍 Buscar en esta carpeta...">
+            <div class="d-flex align-items-center gap-2">
+                <div class="breadcrumb-box flex-grow-1 text-truncate" id="breadcrumb" title="Ruta actual">/~</div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="promptMkdir()" title="Nueva carpeta">
+                    <i class="fas fa-folder-plus"></i>
+                </button>
+            </div>
         </div>
-        <div class="card-body p-0 overflow-auto">
-            <ul id="file-list" class="file-list m-0 p-0">
-                <!-- Los archivos se cargan aquí -->
-            </ul>
+        <div class="card-body p-0 overflow-auto position-relative">
+            <!-- Loading spinner -->
+            <div id="tree-loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2 text-muted small">Cargando...</div>
+            </div>
+            <!-- Error box -->
+            <div id="tree-error" class="alert alert-danger m-3" style="display:none;"></div>
+            <!-- File list -->
+            <ul id="file-list" class="file-list m-0 p-0" style="display:none;"></ul>
         </div>
     </div>
 
     <!-- Editor -->
     <div class="card editor-card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 id="current-file-name" class="text-truncate m-0" style="max-width: 70%;">Sin archivo</h3>
-            <button onclick="saveFile()" class="btn btn-primary btn-sm" id="save-btn" disabled>
-                <i class="fas fa-save"></i> Guardar
-            </button>
+            <div class="d-flex align-items-center gap-2 min-w-0">
+                <i class="fas fa-file-code text-info flex-shrink-0"></i>
+                <h3 id="current-file-name" class="text-truncate m-0 small fw-semibold"
+                    style="max-width: 60%;">Sin archivo abierto</h3>
+            </div>
+            <div class="d-flex gap-2">
+                <button onclick="deleteCurrentFile()" class="btn btn-danger btn-sm" id="delete-btn" disabled title="Eliminar">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button onclick="saveFile()" class="btn btn-primary btn-sm" id="save-btn" disabled>
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
         </div>
-        <div class="card-body p-0">
-            <textarea id="file-editor" disabled></textarea>
+        <div class="card-body p-0 d-flex flex-column">
+            <div id="editor-placeholder" class="text-center text-muted py-5 flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-file-code fa-3x mb-3 opacity-25"></i>
+                <p class="mb-1">Selecciona un archivo para editar</p>
+                <p class="small opacity-50">Solo archivos de texto, máx. 1 MB</p>
+            </div>
+            <textarea id="file-editor" disabled style="display:none;"></textarea>
         </div>
     </div>
 </div>
@@ -37,15 +62,16 @@
 <style>
     .explorer-container {
         display: flex;
-        height: calc(100vh - 140px);
-        gap: 20px;
+        height: calc(100vh - 150px);
+        gap: 16px;
     }
 
     .file-tree-card {
-        width: 30%;
+        width: 32%;
+        min-width: 220px;
+        max-width: 380px;
         display: flex;
         flex-direction: column;
-        min-width: 250px;
     }
 
     .editor-card {
@@ -53,120 +79,167 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
-        /* Solucionar desbordamiento de flex */
+    }
+
+    .editor-card .card-body {
+        flex: 1;
+        min-height: 0;
     }
 
     #file-editor {
         width: 100%;
         height: 100%;
-        background: var(--bg-dark);
+        flex: 1;
+        background: #0d1117;
         color: #d4d4d4;
         border: none;
-        padding: 15px;
-        font-family: 'JetBrains Mono', monospace;
+        padding: 16px;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 0.85rem;
         resize: none;
-        line-height: 1.5;
+        line-height: 1.6;
         outline: none;
     }
 
+    .breadcrumb-box {
+        background: rgba(0,0,0,0.2);
+        border: 1px solid #1e293b;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem;
+        color: #94a3b8;
+    }
+
     .file-item {
-        padding: 10px 15px;
+        padding: 8px 14px;
         cursor: pointer;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         display: flex;
         align-items: center;
-        gap: 10px;
-        transition: background 0.2s;
-        font-size: 0.9rem;
+        gap: 9px;
+        transition: background 0.15s;
+        font-size: 0.85rem;
+        user-select: none;
     }
 
-    .file-item:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
+    .file-item:hover { background: rgba(255,255,255,0.05); }
 
     .file-item.active {
-        background: rgba(59, 130, 246, 0.2);
-        color: #60a5fa;
-        border-left: 3px solid #3b82f6;
+        background: rgba(56, 189, 248, 0.12);
+        color: #38bdf8;
+        border-left: 3px solid #38bdf8;
     }
 
-    .file-icon {
-        width: 20px;
-        text-align: center;
-        opacity: 0.7;
+    .file-item .fi-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    @media (max-width: 992px) {
+    .file-item .fi-size {
+        font-size: 0.7rem;
+        color: #64748b;
+        flex-shrink: 0;
+    }
+
+    .file-icon { width: 18px; text-align: center; flex-shrink: 0; }
+
+    /* Hidden files dimmed */
+    .file-item.hidden-file { opacity: 0.45; }
+
+    @media (max-width: 900px) {
         .explorer-container {
             flex-direction: column;
             height: auto;
         }
-
         .file-tree-card {
             width: 100%;
-            height: 300px;
+            max-width: 100%;
+            height: 280px;
         }
-
-        .editor-card {
-            width: 100%;
-            height: 500px;
-        }
+        .editor-card { height: 420px; }
     }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    let currentPath = '/';
+    let currentPath = '';  // vacío = home del servidor
     let currentFile = null;
-    let allItems = [];
+    let allItems    = [];
 
-    // Funcionalidad de búsqueda
-    document.getElementById('file-search').addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        const filtered = allItems.filter(item => item.name.toLowerCase().includes(query));
-        renderList(filtered);
+    /* ── Size formatter ─────────────────────────────── */
+    function fmtSize(bytes) {
+        if (bytes === 0) return '';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
+        return `${(bytes/1024/1024).toFixed(1)} MB`;
+    }
+
+    /* ── Search ─────────────────────────────────────── */
+    document.getElementById('file-search').addEventListener('input', e => {
+        const q = e.target.value.toLowerCase();
+        renderList(q ? allItems.filter(i => i.name.toLowerCase().includes(q)) : allItems, !!q);
     });
 
+    /* ── Load directory ─────────────────────────────── */
     function loadDirectory(path) {
+        const loading = document.getElementById('tree-loading');
+        const errBox  = document.getElementById('tree-error');
+        const listEl  = document.getElementById('file-list');
+
+        loading.style.display = '';
+        errBox.style.display  = 'none';
+        listEl.style.display  = 'none';
+
         fetch('/api/files/list', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: path })
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    currentPath = path;
-                    allItems = data.items; // Almacenar para búsqueda
-                    updateBreadcrumb();
-                    document.getElementById('file-search').value = ''; // Reiniciar búsqueda
-                    renderFileList(data.items);
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            });
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            loading.style.display = 'none';
+            if (!data.success) {
+                errBox.textContent   = `Error: ${data.message}`;
+                errBox.style.display = '';
+                return;
+            }
+            // Update path to what the server resolved
+            currentPath = data.current_path || path;
+            allItems    = data.items || [];
+            document.getElementById('file-search').value = '';
+            document.getElementById('breadcrumb').textContent = currentPath;
+            document.getElementById('breadcrumb').title = currentPath;
+            renderList(allItems, false);
+            listEl.style.display = '';
+        })
+        .catch(err => {
+            loading.style.display = 'none';
+            errBox.textContent    = `Error de conexión: ${err.message}`;
+            errBox.style.display  = '';
+        });
     }
 
-    function renderFileList(items) {
-        // Solo un contenedor para establecer allItems si se llama directamente, básicamente maneja la inserción de ".."
-        renderList(items);
-    }
-
-    function renderList(items) {
+    /* ── Render list ─────────────────────────────────── */
+    function renderList(items, isFiltered) {
         const list = document.getElementById('file-list');
         list.innerHTML = '';
-        document.getElementById('item-count').innerText = `${items.length} items`;
+        document.getElementById('item-count').textContent = `${items.length} elementos`;
 
-        // Añadir ".." si no es la raíz y no estamos filtrando profundamente (¿solo mostrar .. si se muestra la lógica de lista completa? manteniéndolo simple)
-        const isSearching = document.getElementById('file-search').value.length > 0;
-
-        if (currentPath !== '/' && !isSearching) {
+        // ".." entry
+        if (currentPath && !isFiltered) {
             const li = document.createElement('li');
             li.className = 'file-item text-secondary';
-            li.innerHTML = `<span class="file-icon"><i class="fas fa-level-up-alt"></i></span> ..`;
+            li.innerHTML = `<span class="file-icon"><i class="fas fa-level-up-alt"></i></span>
+                            <span class="fi-name">..</span>`;
             li.onclick = () => {
-                const parent = currentPath.split('/').slice(0, -1).join('/') || '/';
+                const parent = currentPath.split('/').slice(0, -1).join('/') || '';
                 loadDirectory(parent);
             };
             list.appendChild(li);
@@ -174,17 +247,26 @@
 
         items.forEach(item => {
             const li = document.createElement('li');
-            li.className = 'file-item';
-            const iconClass = item.is_dir ? 'fas fa-folder text-warning' : 'fas fa-file-code text-info';
-            li.innerHTML = `<span class="file-icon"><i class="${iconClass}"></i></span> ${item.name}`;
+            const hidden = item.name.startsWith('.');
+            li.className = 'file-item' + (hidden ? ' hidden-file' : '');
+
+            const icon = item.is_dir
+                ? 'fas fa-folder text-warning'
+                : getFileIcon(item.name);
+
+            li.innerHTML = `<span class="file-icon"><i class="${icon}"></i></span>
+                            <span class="fi-name" title="${escHtml(item.name)}">${escHtml(item.name)}</span>
+                            ${!item.is_dir ? `<span class="fi-size">${fmtSize(item.size)}</span>` : ''}`;
 
             li.onclick = () => {
                 if (item.is_dir) {
-                    const newPath = currentPath === '/' ? '/' + item.name : currentPath + '/' + item.name;
+                    const newPath = currentPath
+                        ? `${currentPath}/${item.name}`
+                        : item.path || item.name;
                     loadDirectory(newPath);
                 } else {
                     loadFile(item.path);
-                    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+                    list.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
                     li.classList.add('active');
                 }
             };
@@ -192,55 +274,162 @@
         });
     }
 
-    function updateBreadcrumb() {
-        document.getElementById('breadcrumb').innerText = currentPath;
+    /* ── File icon by extension ──────────────────────── */
+    function getFileIcon(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        const map = {
+            py: 'fab fa-python text-blue-400',
+            js: 'fab fa-js-square text-yellow-400',
+            ts: 'fab fa-js text-blue-500',
+            html: 'fas fa-code text-orange-400',
+            css: 'fab fa-css3-alt text-blue-400',
+            json: 'fas fa-brackets-curly text-green-400',
+            md: 'fab fa-markdown text-gray-400',
+            sh: 'fas fa-terminal text-green-300',
+            txt: 'fas fa-file-alt text-gray-400',
+            log: 'fas fa-scroll text-gray-400',
+            png: 'fas fa-image text-pink-400',
+            jpg: 'fas fa-image text-pink-400',
+            jpeg: 'fas fa-image text-pink-400',
+            gif: 'fas fa-image text-pink-400',
+            svg: 'fas fa-draw-polygon text-purple-400',
+            pdf: 'fas fa-file-pdf text-red-400',
+            zip: 'fas fa-file-archive text-yellow-400',
+            gz:  'fas fa-file-archive text-yellow-400',
+            yaml: 'fas fa-file-code text-teal-400',
+            yml:  'fas fa-file-code text-teal-400',
+            ini:  'fas fa-sliders-h text-gray-400',
+            cfg:  'fas fa-sliders-h text-gray-400',
+            conf: 'fas fa-sliders-h text-gray-400',
+        };
+        return map[ext] || 'fas fa-file text-info';
     }
 
+    /* ── Load file into editor ───────────────────────── */
     function loadFile(path) {
         fetch('/api/files/read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: path })
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    currentFile = path;
-                    document.getElementById('current-file-name').innerText = path.split('/').pop();
-                    const editor = document.getElementById('file-editor');
-                    editor.value = data.content;
-                    editor.disabled = false;
-                    document.getElementById('save-btn').disabled = false;
-                } else {
-                    alert('Error leyendo archivo: ' + data.message);
-                }
-            });
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                currentFile = path;
+                document.getElementById('current-file-name').textContent = path.split('/').pop();
+                const editor = document.getElementById('file-editor');
+                const placeholder = document.getElementById('editor-placeholder');
+                editor.value    = data.content;
+                editor.disabled = false;
+                editor.style.display = '';
+                placeholder.style.display = 'none';
+                document.getElementById('save-btn').disabled   = false;
+                document.getElementById('delete-btn').disabled = false;
+            } else {
+                showEditorError(data.message);
+            }
+        })
+        .catch(err => showEditorError(err.message));
     }
 
+    function showEditorError(msg) {
+        const placeholder = document.getElementById('editor-placeholder');
+        placeholder.innerHTML = `<i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+            <p class="text-danger mb-0">${escHtml(msg)}</p>`;
+        placeholder.style.display = '';
+        document.getElementById('file-editor').style.display = 'none';
+    }
+
+    /* ── Save file ───────────────────────────────────── */
     function saveFile() {
         if (!currentFile) return;
         const content = document.getElementById('file-editor').value;
+        const btn = document.getElementById('save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
         fetch('/api/files/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: currentFile, content: content })
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // Aquí podría ir una animación de respuesta mínima
-                    const btn = document.getElementById('save-btn');
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-check"></i> Guardado';
-                    setTimeout(() => btn.innerHTML = originalText, 2000);
-                } else {
-                    alert('Error guardando: ' + data.message);
-                }
-            });
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                btn.innerHTML = '<i class="fas fa-check"></i> Guardado';
+                btn.classList.replace('btn-primary', 'btn-success');
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+                    btn.classList.replace('btn-success', 'btn-primary');
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+                btn.disabled  = false;
+                alert('Error guardando: ' + data.message);
+            }
+        })
+        .catch(err => {
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+            btn.disabled  = false;
+            alert('Error: ' + err.message);
+        });
     }
 
-    // Carga inicial
-    loadDirectory(currentPath);
+    /* ── Delete file ─────────────────────────────────── */
+    function deleteCurrentFile() {
+        if (!currentFile) return;
+        const name = currentFile.split('/').pop();
+        if (!confirm(`¿Eliminar "${name}"? Esta acción no se puede deshacer.`)) return;
+
+        fetch('/api/files/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: currentFile })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                currentFile = null;
+                document.getElementById('current-file-name').textContent = 'Sin archivo abierto';
+                document.getElementById('file-editor').style.display = 'none';
+                document.getElementById('editor-placeholder').style.display = '';
+                document.getElementById('editor-placeholder').innerHTML = `
+                    <i class="fas fa-file-code fa-3x mb-3 opacity-25"></i>
+                    <p>Selecciona un archivo para editar</p>`;
+                document.getElementById('save-btn').disabled   = true;
+                document.getElementById('delete-btn').disabled = true;
+                loadDirectory(currentPath);
+            } else {
+                alert('Error eliminando: ' + data.message);
+            }
+        });
+    }
+
+    /* ── New folder ──────────────────────────────────── */
+    function promptMkdir() {
+        const name = prompt('Nombre de la nueva carpeta:');
+        if (!name) return;
+        fetch('/api/files/mkdir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ parent: currentPath, name: name })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) loadDirectory(currentPath);
+            else alert('Error: ' + data.message);
+        });
+    }
+
+    /* ── Utility ─────────────────────────────────────── */
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* ── Init ─────────────────────────────────────────── */
+    loadDirectory('');  // '' → home del usuario en el servidor
 </script>
 {% endblock %}

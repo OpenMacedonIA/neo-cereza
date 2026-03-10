@@ -155,16 +155,7 @@ def skills():
     except:
         return render_template('skills.html', page='skills', config={})
 
-@app.route('/training')
-def training():
-    # Training normalmente necesita configuración también para la lógica de las opciones TTS/STT
-    try:
-        headers, cookies = get_headers()
-        resp = requests.get(f"{NEO_API_URL}/api/config/get", cookies=cookies, verify=False)
-        data = resp.json()
-        return render_template('training.html', page='training', config=data.get('config', {}))
-    except:
-        return render_template('training.html', page='training', config={})    
+
 
 @app.route('/face')
 def face():

@@ -43,6 +43,7 @@
             --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 
             --sidebar-width: 280px;
+            --sidebar-collapsed-width: 64px;
 
             /* MODIFICACIONES DE BOOTSTRAP */
             --bs-body-bg: var(--bg-body);
@@ -105,7 +106,9 @@
             border-radius: 1rem;
         }
 
-        /* Sidebar */
+        /* ═══════════════════════════════════
+           SIDEBAR — RESPONSIVE COLLAPSIBLE
+        ═══════════════════════════════════ */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
@@ -118,7 +121,117 @@
             display: flex;
             flex-direction: column;
             z-index: 1000;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+            overflow: hidden;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        background-color 0.3s;
+        }
+
+        /* Collapsed state — icon rail */
+        body.sidebar-collapsed .sidebar {
+            width: var(--sidebar-collapsed-width);
+        }
+        body.sidebar-collapsed .main-content {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        /* Hide text labels & logo text when collapsed */
+        body.sidebar-collapsed .sidebar-header h3,
+        body.sidebar-collapsed .sidebar-header a,
+        body.sidebar-collapsed .nav-link span.nav-label {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        body.sidebar-collapsed .sidebar-header {
+            justify-content: center;
+            padding: 1.2rem 0.5rem;
+        }
+        body.sidebar-collapsed .nav-link {
+            justify-content: center;
+            padding: 0.85rem 0;
+        }
+        body.sidebar-collapsed .nav-link i {
+            width: auto;
+            margin: 0;
+        }
+        body.sidebar-collapsed .sidebar-toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Tooltip for collapsed mode */
+        body.sidebar-collapsed .nav-link {
+            position: relative;
+        }
+        body.sidebar-collapsed .nav-link::after {
+            content: attr(data-label);
+            position: absolute;
+            left: calc(var(--sidebar-collapsed-width) + 8px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 18, 26, 0.95);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s;
+            z-index: 2000;
+        }
+        body.sidebar-collapsed .nav-link:hover::after {
+            opacity: 1;
+        }
+
+        /* Sidebar toggle button (always visible) */
+        .sidebar-toggle-btn {
+            position: fixed;
+            top: 14px;
+            left: calc(var(--sidebar-width) - 16px);
+            z-index: 1100;
+            width: 32px;
+            height: 32px;
+            min-width: unset;
+            min-height: unset;
+            padding: 0;
+            border-radius: 50%;
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
+        }
+        body.sidebar-collapsed .sidebar-toggle-btn {
+            left: calc(var(--sidebar-collapsed-width) - 16px);
+        }
+        .sidebar-toggle-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .sidebar-toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        /* Mobile overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            backdrop-filter: blur(2px);
+        }
+        .sidebar-overlay.active {
+            display: block;
         }
 
         .sidebar-header {
@@ -127,6 +240,7 @@
             align-items: center;
             gap: 1rem;
             border-bottom: 1px solid var(--border);
+            transition: padding 0.3s, justify-content 0.3s;
         }
 
         .sidebar-header h3 {
@@ -138,6 +252,8 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
+            white-space: nowrap;
+            transition: opacity 0.2s, width 0.3s;
         }
 
         .nav-link {
@@ -151,12 +267,20 @@
             font-weight: 500;
             border-radius: 0 8px 8px 0;
             margin-right: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .nav-label {
+            transition: opacity 0.2s, width 0.3s;
         }
 
         .nav-link:hover {
             color: var(--text-main);
             background-color: var(--bg-hover);
             transform: translateX(4px);
+        }
+        body.sidebar-collapsed .nav-link:hover {
+            transform: none;
         }
 
         .nav-link.active {
@@ -167,6 +291,7 @@
 
         .nav-link i {
             width: 24px;
+            min-width: 24px;
             text-align: center;
             opacity: 0.8;
             transition: transform 0.2s;
@@ -178,12 +303,14 @@
             color: var(--accent);
         }
 
-        /* Contenido Principal */
+        /* ═══════════════════════════════════
+           MAIN CONTENT
+        ═══════════════════════════════════ */
         .main-content {
             margin-left: var(--sidebar-width);
             padding: 2rem;
             min-height: 100vh;
-            transition: margin-left 0.3s;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Tarjetas y Componentes */
@@ -288,18 +415,38 @@
             transition: transform 0.1s;
         }
 
-        @media (max-width: 992px) {
+        /* ─── MEDIUM screens: auto-collapse sidebar ─── */
+        @media (max-width: 1200px) and (min-width: 769px) {
+            :root { --sidebar-width: 280px; }
+            /* Auto-collapse hint: we add the collapsed class via JS on load */
+        }
+
+        /* ─── MOBILE: sidebar becomes overlay drawer ─── */
+        @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
+                width: var(--sidebar-width) !important; /* full width when open */
             }
-
-            .sidebar.show {
+            .sidebar.mobile-open {
                 transform: translateX(0);
             }
-
             .main-content {
-                margin-left: 0;
+                margin-left: 0 !important;
                 padding: 1rem;
+            }
+            .sidebar-toggle-btn {
+                left: 12px;
+                top: 10px;
+            }
+            body.sidebar-collapsed .sidebar-toggle-btn {
+                left: 12px;
+            }
+        }
+
+        /* ─── Very small screens ─── */
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.75rem;
             }
         }
     </style>
@@ -315,85 +462,75 @@
     {% block head_extra %}{% endblock %}
 </head>
 
-<body>
-
-    <!-- Interruptor para móviles -->
-    <button class="btn btn-dark d-md-none position-fixed top-0 start-0 m-3 z-3"
-        onclick="document.querySelector('.sidebar').classList.toggle('show')">
-        <i class="fas fa-bars"></i>
+    <!-- Sidebar toggle (always visible) -->
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Colapsar menú">
+        <i class="fas fa-chevron-left sidebar-toggle-icon"></i>
     </button>
 
+    <!-- Mobile overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+
     <!-- Barra lateral -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <i class="fas fa-robot fa-lg text-primary"></i>
+            <i class="fas fa-robot fa-lg text-primary" style="min-width:24px;"></i>
             <h3>Neo Admin</h3>
             <a href="/face" style="color: var(--text-muted); font-size: 0.75rem; text-decoration: none; 
                       padding: 4px 10px; border: 1px solid var(--primary); border-radius: 6px;
-                      transition: all 0.3s; display: inline-block; margin-top: 8px;"
+                      transition: all 0.3s; display: inline-block; white-space:nowrap;"
                 onmouseover="this.style.background='var(--primary)'; this.style.color='white';"
                 onmouseout="this.style.background=''; this.style.color='var(--text-muted)';">
-                <i class="fas fa-eye me-1"></i>Face UI
+                <i class="fas fa-eye me-1"></i><span class="nav-label">Face UI</span>
             </a>
         </div>
 
         <div class="d-flex flex-column flex-grow-1 overflow-auto py-3">
-            <a href="{{ url_for('dashboard') }}" class="nav-link {% if page == 'dashboard' %}active{% endif %}">
-                <i class="fas fa-chart-line"></i> Dashboard
+            <a href="{{ url_for('dashboard') }}" class="nav-link {% if page == 'dashboard' %}active{% endif %}" data-label="Dashboard">
+                <i class="fas fa-chart-line"></i><span class="nav-label"> Dashboard</span>
             </a>
-            <a href="{{ url_for('monitor') }}" class="nav-link {% if page == 'monitor' %}active{% endif %}">
-                <i class="fas fa-heartbeat"></i> Monitor
+            <a href="{{ url_for('monitor') }}" class="nav-link {% if page == 'monitor' %}active{% endif %}" data-label="Monitor">
+                <i class="fas fa-heartbeat"></i><span class="nav-label"> Monitor</span>
             </a>
-            <a href="{{ url_for('network') }}" class="nav-link {% if page == 'network' %}active{% endif %}">
-                <i class="fas fa-wifi"></i> Red
+            <a href="{{ url_for('network') }}" class="nav-link {% if page == 'network' %}active{% endif %}" data-label="Red">
+                <i class="fas fa-wifi"></i><span class="nav-label"> Red</span>
             </a>
-            <a href="{{ url_for('terminal') }}" class="nav-link {% if page == 'terminal' %}active{% endif %}">
-                <i class="fas fa-terminal"></i> Terminal
+            <a href="{{ url_for('terminal') }}" class="nav-link {% if page == 'terminal' %}active{% endif %}" data-label="Terminal">
+                <i class="fas fa-terminal"></i><span class="nav-label"> Terminal</span>
             </a>
-            <a href="{{ url_for('logs') }}" class="nav-link {% if page == 'logs' %}active{% endif %}">
-                <i class="fas fa-list-alt"></i> Logs
+            <a href="{{ url_for('logs') }}" class="nav-link {% if page == 'logs' %}active{% endif %}" data-label="Logs">
+                <i class="fas fa-list-alt"></i><span class="nav-label"> Logs</span>
             </a>
-
-            <a href="{{ url_for('actions') }}" class="nav-link {% if page == 'actions' %}active{% endif %}">
-                <i class="fas fa-bolt"></i> Acciones
+            <a href="{{ url_for('actions') }}" class="nav-link {% if page == 'actions' %}active{% endif %}" data-label="Acciones">
+                <i class="fas fa-bolt"></i><span class="nav-label"> Acciones</span>
             </a>
-            <a href="{{ url_for('speech') }}" class="nav-link {% if page == 'speech' %}active{% endif %}">
-                <i class="fas fa-microphone-alt"></i> Voz
+            <a href="{{ url_for('speech') }}" class="nav-link {% if page == 'speech' %}active{% endif %}" data-label="Voz">
+                <i class="fas fa-microphone-alt"></i><span class="nav-label"> Voz</span>
             </a>
-
-            <a href="{{ url_for('tasks_page') }}" class="nav-link {% if page == 'tasks' %}active{% endif %}">
-                <i class="fas fa-clock"></i> Tareas
+            <a href="{{ url_for('tasks_page') }}" class="nav-link {% if page == 'tasks' %}active{% endif %}" data-label="Tareas">
+                <i class="fas fa-clock"></i><span class="nav-label"> Tareas</span>
             </a>
-            <a href="{{ url_for('explorer') }}" class="nav-link {% if page == 'explorer' %}active{% endif %}">
-                <i class="fas fa-folder-open"></i> Archivos
+            <a href="{{ url_for('explorer') }}" class="nav-link {% if page == 'explorer' %}active{% endif %}" data-label="Archivos">
+                <i class="fas fa-folder-open"></i><span class="nav-label"> Archivos</span>
             </a>
-            <!-- Panel de conocimiento oculto temporalmente
-            <a href="{{ url_for('knowledge') }}" class="nav-link {% if page == 'knowledge' %}active{% endif %}">
-                <i class="fas fa-brain"></i> Conocimiento
+            <a href="{{ url_for('skills') }}" class="nav-link {% if page == 'skills' %}active{% endif %}" data-label="Habilidades">
+                <i class="fas fa-cubes"></i><span class="nav-label"> Habilidades</span>
             </a>
-            -->
-            <a href="{{ url_for('skills') }}" class="nav-link {% if page == 'skills' %}active{% endif %}">
-                <i class="fas fa-cubes"></i> Habilidades
-            </a>
-            <a href="{{ url_for('training') }}" class="nav-link {% if page == 'training' %}active{% endif %}">
-                <i class="fas fa-dumbbell"></i> Entrenamiento
-            </a>
-            <a href="{{ url_for('agents') }}" class="nav-link {% if page == 'agents' %}active{% endif %}">
-                <i class="fas fa-satellite-dish"></i> Agentes MQTT
+            <a href="{{ url_for('agents') }}" class="nav-link {% if page == 'agents' %}active{% endif %}" data-label="Agentes MQTT">
+                <i class="fas fa-satellite-dish"></i><span class="nav-label"> Agentes MQTT</span>
             </a>
             {% if config.neo_ssh_enabled %}
-            <a href="{{ url_for('ssh_page') }}" class="nav-link {% if page == 'ssh' %}active{% endif %}">
-                <i class="fas fa-server"></i> SSH
+            <a href="{{ url_for('ssh_page') }}" class="nav-link {% if page == 'ssh' %}active{% endif %}" data-label="SSH">
+                <i class="fas fa-server"></i><span class="nav-label"> SSH</span>
             </a>
             {% endif %}
-            <a href="{{ url_for('settings') }}" class="nav-link {% if page == 'settings' %}active{% endif %}">
-                <i class="fas fa-cog"></i> Ajustes
+            <a href="{{ url_for('settings') }}" class="nav-link {% if page == 'settings' %}active{% endif %}" data-label="Ajustes">
+                <i class="fas fa-cog"></i><span class="nav-label"> Ajustes</span>
             </a>
         </div>
 
         <div class="p-3 border-top border-secondary border-opacity-10">
-            <a href="{{ url_for('logout') }}" class="nav-link text-danger">
-                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            <a href="{{ url_for('logout') }}" class="nav-link text-danger" data-label="Salir">
+                <i class="fas fa-sign-out-alt"></i><span class="nav-label"> Cerrar Sesión</span>
             </a>
         </div>
     </aside>
@@ -485,6 +622,27 @@
                 return originalFetch(input, init);
             };
 
+            // ── Sidebar collapse init ──────────────────────────────
+            const isMobile = () => window.innerWidth <= 768;
+
+            // Restaurar estado guardado, o colapsar automáticamente en ventanas medianas
+            if (!isMobile()) {
+                const saved = localStorage.getItem('neo-sidebar-collapsed');
+                const autoCollapse = window.innerWidth < 1100;
+                const shouldCollapse = saved !== null ? saved === 'true' : autoCollapse;
+                if (shouldCollapse) document.body.classList.add('sidebar-collapsed');
+            }
+
+            // Actualizar posición del botón al cambiar tamaño
+            window.addEventListener('resize', () => {
+                if (isMobile()) {
+                    document.body.classList.remove('sidebar-collapsed');
+                    document.getElementById('sidebar').classList.remove('mobile-open');
+                    document.getElementById('sidebar-overlay').classList.remove('active');
+                }
+            });
+            // ──────────────────────────────────────────────────────
+
             // Iniciar Tema
             const storedTheme = localStorage.getItem('neo-theme') || 'dark';
             setTheme(storedTheme);
@@ -499,6 +657,28 @@
             // Iniciar Monitor de Conexión
             monitorConnection();
         });
+
+        // ── Sidebar collapse / mobile open ────────────────────────
+        function toggleSidebar() {
+            if (window.innerWidth <= 768) {
+                // MOBILE: toggle overlay drawer
+                const sidebar  = document.getElementById('sidebar');
+                const overlay  = document.getElementById('sidebar-overlay');
+                const isOpen   = sidebar.classList.contains('mobile-open');
+                sidebar.classList.toggle('mobile-open', !isOpen);
+                overlay.classList.toggle('active', !isOpen);
+            } else {
+                // DESKTOP: toggle icon-rail collapse
+                const collapsed = document.body.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('neo-sidebar-collapsed', collapsed);
+            }
+        }
+
+        function closeMobileSidebar() {
+            document.getElementById('sidebar').classList.remove('mobile-open');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+        }
+        // ─────────────────────────────────────────────────────────
 
         function toggleTheme() {
             const current = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
