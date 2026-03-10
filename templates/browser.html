@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-globe me-2"></i> Navegador Web Integrado</span>
+    </div>
+    <div class="card-body">
+        <div class="input-group mb-3">
+            <span class="input-group-text"><i class="fas fa-link"></i></span>
+            <input type="url" class="form-control" id="urlInput" placeholder="http://127.0.0.1:8080" value="http://127.0.0.1:">
+            <button class="btn btn-primary" id="btnGo"><i class="fas fa-arrow-right"></i> Ir</button>
+            <button class="btn btn-secondary" id="btnReload" title="Recargar"><i class="fas fa-sync"></i></button>
+        </div>
+        
+        <div class="alert alert-info py-2 small mb-3">
+            <i class="fas fa-info-circle me-2"></i> <b>Nota:</b> Úsalo principalmente para servicios en red local o contenedores Docker (Portainer, Pi-hole, Node-RED, etc.). Sitios web externos como Google bloquean la visualización dentro de iframes (X-Frame-Options).
+        </div>
+
+        <div class="ratio ratio-16x9 border rounded" style="min-height: 70vh; background-color: var(--bg-hover);">
+            <iframe id="browserFrame" src="" allowfullscreen sandbox="allow-same-origin allow-scripts allow-popups allow-forms" style="width: 100%; height: 100%; min-height: 70vh; border: none;"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const urlInput = document.getElementById('urlInput');
+    const btnGo = document.getElementById('btnGo');
+    const btnReload = document.getElementById('btnReload');
+    const browserFrame = document.getElementById('browserFrame');
+
+    function loadUrl() {
+        let url = urlInput.value.trim();
+        if (!url || url === 'http://127.0.0.1:') return;
+        
+        // Asume http:// si no hay protocolo
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'http://' + url;
+            urlInput.value = url;
+        }
+        
+        browserFrame.src = url;
+    }
+
+    btnGo.addEventListener('click', loadUrl);
+    
+    urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') loadUrl();
+    });
+
+    btnReload.addEventListener('click', () => {
+        if (browserFrame.src && browserFrame.src !== window.location.href) {
+            browserFrame.src = browserFrame.src;
+        }
+    });
+});
+</script>
+{% endblock %}
