@@ -1,116 +1,161 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row fade-in">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3>Scheduled Tasks (Cron)</h3>
-                <button class="btn btn-primary btn-sm" onclick="showAddTaskModal()">
-                    <i class="fas fa-plus"></i> New Task
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Next Run</th>
-                                <th>Cron Expression</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tasks-list">
-                            <!-- Rellenado por JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="fas fa-clock me-2 text-primary"></i>Tareas Programadas</h2>
+        <small class="text-muted">Comandos y scripts que se ejecutan automáticamente según una expresión cron.</small>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="showAddTaskModal()">
+        <i class="fas fa-plus me-1"></i> Nueva Tarea
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div id="tasks-loading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="text-muted mt-2 small">Cargando tareas...</div>
+        </div>
+        <div class="table-responsive" id="tasks-table-wrap" style="display:none;">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-tag me-1 text-muted"></i>Nombre</th>
+                        <th><i class="fas fa-terminal me-1 text-muted"></i>Comando</th>
+                        <th><i class="fas fa-calendar-alt me-1 text-muted"></i>Expresión Cron</th>
+                        <th><i class="fas fa-hourglass-half me-1 text-muted"></i>Próxima Ejecución</th>
+                        <th style="width:90px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tasks-list"></tbody>
+            </table>
+        </div>
+        <div id="tasks-empty" class="text-center py-5 text-muted" style="display:none;">
+            <i class="fas fa-clock fa-3x mb-3 opacity-25"></i>
+            <p class="mb-1">No hay tareas programadas.</p>
+            <p class="small opacity-75">Pulsa <strong>Nueva Tarea</strong> para añadir una.</p>
         </div>
     </div>
 </div>
 
-<!-- Modal de Añadir Tarea -->
+<!-- Modal de Nueva Tarea -->
 <div class="modal fade" id="addTaskModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title">Schedule New Command</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle me-2 text-primary"></i>Nueva Tarea Programada
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Task Name</label>
-                    <input type="text" class="form-control bg-dark text-light border-secondary" id="taskName"
-                        placeholder="e.g. Restart Router">
+                    <label class="form-label fw-semibold">
+                        <i class="fas fa-tag me-1 text-muted"></i>Nombre de la tarea
+                    </label>
+                    <input type="text" class="form-control" id="taskName"
+                        placeholder="Ej: Reiniciar router">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Bash Command</label>
-                    <input type="text" class="form-control bg-dark text-light border-secondary" id="taskCommand"
-                        placeholder="e.g. reboot">
-                    <div class="form-text text-muted">Use with caution. Runs as user 'neo'.</div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Cron Expression</label>
-                    <input type="text" class="form-control bg-dark text-light border-secondary" id="taskCron"
-                        placeholder="min hour day month dow">
-                    <div class="form-text text-muted">Format: <code>* * * * *</code> (Minute Hour Day Month DayOfWeek)
+                    <label class="form-label fw-semibold">
+                        <i class="fas fa-terminal me-1 text-muted"></i>Comando Bash
+                    </label>
+                    <input type="text" class="form-control font-monospace" id="taskCommand"
+                        placeholder="Ej: systemctl restart nginx">
+                    <div class="form-text text-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Se ejecuta con los permisos del proceso NeoCore. Usa con precaución.
                     </div>
-                    <div class="mt-2">
-                        <button class="btn btn-outline-secondary btn-sm" onclick="setCron('0 3 * * *')">Daily
-                            3AM</button>
-                        <button class="btn btn-outline-secondary btn-sm" onclick="setCron('0 0 * * 0')">Weekly
-                            (Sun)</button>
-                        <button class="btn btn-outline-secondary btn-sm" onclick="setCron('*/5 * * * *')">Every 5
-                            mins</button>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        <i class="fas fa-calendar-alt me-1 text-muted"></i>Expresión Cron
+                    </label>
+                    <input type="text" class="form-control font-monospace" id="taskCron"
+                        placeholder="minuto hora día mes día-semana">
+                    <div class="form-text">
+                        Formato: <code>* * * * *</code> (minuto • hora • día del mes • mes • día de la semana)
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="setCron('0 3 * * *')">
+                            <i class="fas fa-moon me-1"></i>Cada día a las 3 AM
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="setCron('0 0 * * 0')">
+                            <i class="fas fa-calendar-week me-1"></i>Semanal (Dom)
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="setCron('*/5 * * * *')">
+                            <i class="fas fa-stopwatch me-1"></i>Cada 5 min
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="setCron('0 * * * *')">
+                            <i class="fas fa-clock me-1"></i>Cada hora
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="addTask()">Schedule</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="addTask()">
+                    <i class="fas fa-calendar-plus me-1"></i>Programar Tarea
+                </button>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
     function loadTasks() {
-        const tbody = document.getElementById('tasks-list');
-        tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+        document.getElementById('tasks-loading').style.display = '';
+        document.getElementById('tasks-table-wrap').style.display = 'none';
+        document.getElementById('tasks-empty').style.display = 'none';
 
         fetch('/api/tasks/list')
             .then(res => res.json())
             .then(data => {
+                document.getElementById('tasks-loading').style.display = 'none';
+                const tbody = document.getElementById('tasks-list');
                 tbody.innerHTML = '';
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No scheduled tasks.</td></tr>';
+
+                if (!data || data.length === 0) {
+                    document.getElementById('tasks-empty').style.display = '';
                     return;
                 }
 
+                document.getElementById('tasks-table-wrap').style.display = '';
                 data.forEach(job => {
-                    const row = `
-                        <tr>
-                            <td><strong>${job.name}</strong></td>
-                            <td>${job.next_run}</td>
-                            <td><code style="color:var(--accent-color)">${job.trigger}</code></td>
-                            <td>
-                                <button class="btn btn-danger btn-sm" onclick="deleteTask('${job.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${escHtml(job.name)}</strong></td>
+                        <td><code class="small text-info">${escHtml(job.command || '')}</code></td>
+                        <td><code style="color:var(--accent)">${escHtml(job.trigger)}</code></td>
+                        <td class="text-muted small">${escHtml(job.next_run)}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deleteTask('${job.id}')"
+                                title="Eliminar tarea">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
                     `;
-                    tbody.innerHTML += row;
+                    tbody.appendChild(row);
                 });
+            })
+            .catch(err => {
+                document.getElementById('tasks-loading').style.display = 'none';
+                document.getElementById('tasks-empty').innerHTML = `
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2 text-danger"></i>
+                    <p class="text-danger">Error cargando tareas: ${escHtml(err.message)}</p>`;
+                document.getElementById('tasks-empty').style.display = '';
             });
     }
 
     function showAddTaskModal() {
+        document.getElementById('taskName').value = '';
+        document.getElementById('taskCommand').value = '';
+        document.getElementById('taskCron').value = '';
         new bootstrap.Modal(document.getElementById('addTaskModal')).show();
     }
 
@@ -119,12 +164,12 @@
     }
 
     function addTask() {
-        const name = document.getElementById('taskName').value;
-        const command = document.getElementById('taskCommand').value;
-        const cron = document.getElementById('taskCron').value;
+        const name    = document.getElementById('taskName').value.trim();
+        const command = document.getElementById('taskCommand').value.trim();
+        const cron    = document.getElementById('taskCron').value.trim();
 
         if (!name || !command || !cron) {
-            alert("All fields are required");
+            window.notify('Campos incompletos', 'Rellena todos los campos antes de guardar.', 'warning');
             return;
         }
 
@@ -133,30 +178,40 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, command, cron })
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
-                    loadTasks();
-                } else {
-                    alert("Error: " + data.message);
-                }
-            });
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+                window.notify('Tarea añadida', `"${name}" programada correctamente.`, 'success');
+                loadTasks();
+            } else {
+                window.notify('Error', data.message, 'danger');
+            }
+        });
     }
 
     function deleteTask(id) {
-        if (confirm("Delete this task?")) {
-            fetch('/api/tasks/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) loadTasks();
-                    else alert(data.message);
-                });
-        }
+        if (!confirm('¿Eliminar esta tarea programada? No se puede deshacer.')) return;
+        fetch('/api/tasks/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.notify('Eliminada', 'Tarea eliminada correctamente.', 'success');
+                loadTasks();
+            } else {
+                window.notify('Error', data.message, 'danger');
+            }
+        });
+    }
+
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     document.addEventListener('DOMContentLoaded', loadTasks);

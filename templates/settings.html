@@ -1,456 +1,909 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-3 mb-4">
-        <div class="list-group" id="settings-list-tab" role="tablist">
+<div class="row g-4">
+    <!-- Menú lateral de secciones -->
+    <div class="col-md-3">
+        <div class="list-group settings-nav" id="settings-list-tab" role="tablist">
             <a class="list-group-item list-group-item-action active" data-bs-toggle="list" href="#general" role="tab">
-                <i class="fas fa-cogs me-3"></i> General
+                <i class="fas fa-user-cog fa-fw me-2"></i> General
             </a>
             <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#appearance" role="tab">
-                <i class="fas fa-paint-brush me-3"></i> Apariencia (Nuevo)
+                <i class="fas fa-palette fa-fw me-2"></i> Apariencia
             </a>
             <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#ai" role="tab">
-                <i class="fas fa-brain me-3"></i> Inteligencia Artificial
+                <i class="fas fa-brain fa-fw me-2"></i> Inteligencia Artificial
             </a>
-            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#about" role="tab">
-                <i class="fas fa-info-circle me-3"></i> Información
+            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#notifications" role="tab">
+                <i class="fas fa-bell fa-fw me-2"></i> Notificaciones
+            </a>
+            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#security" role="tab">
+                <i class="fas fa-shield-alt fa-fw me-2"></i> Seguridad
             </a>
             <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#advanced" role="tab">
-                <i class="fas fa-code me-3"></i> Avanzado
+                <i class="fas fa-code fa-fw me-2"></i> Avanzado
             </a>
-            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#docs" role="tab">
-                <i class="fas fa-folder-open me-3"></i> Documentación
+            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#about" role="tab">
+                <i class="fas fa-info-circle fa-fw me-2"></i> Información
             </a>
-            <a class="list-group-item list-group-item-action text-danger" data-bs-toggle="list" href="#danger"
-                role="tab">
-                <i class="fas fa-exclamation-triangle me-3"></i> Zona de Peligro
+            <a class="list-group-item list-group-item-action text-danger" data-bs-toggle="list" href="#danger" role="tab">
+                <i class="fas fa-radiation-alt fa-fw me-2"></i> Zona de Peligro
             </a>
         </div>
     </div>
 
+    <!-- Contenido de las pestañas -->
     <div class="col-md-9">
         <div class="tab-content">
 
-            <!-- PESTAÑA GENERAL -->
+            <!-- ══════════════════════════════════════════
+                 GENERAL
+            ══════════════════════════════════════════ -->
             <div class="tab-pane fade show active" id="general" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Configuración General</h5>
+                        <h5 class="mb-0"><i class="fas fa-user-cog me-2 text-primary"></i>Configuración General</h5>
                     </div>
                     <div class="card-body">
                         <form method="post">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                            {% for category, message in messages %}
-                            <div class="alert alert-{{ category }}">{{ message }}</div>
-                            {% endfor %}
-                            {% endif %}
+                            {% if messages %}{% for category, message in messages %}
+                            <div class="alert alert-{{ category }} d-flex align-items-center gap-2">
+                                <i class="fas fa-info-circle"></i> {{ message }}
+                            </div>
+                            {% endfor %}{% endif %}
                             {% endwith %}
 
-                            <div class="mb-3">
-                                <label class="form-label">Nombre de Usuario</label>
-                                <input type="text" class="form-control" name="username" value="{{ config.admin_user }}"
-                                    required>
-                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-user me-1 text-muted"></i> Nombre de Usuario
+                                    </label>
+                                    <input type="text" class="form-control" name="username"
+                                        value="{{ config.admin_user }}" required autocomplete="username">
+                                </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Contraseña</label>
-                                <input type="password" class="form-control" name="password"
-                                    placeholder="Dejar en blanco para no cambiar">
-                            </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-lock me-1 text-muted"></i> Contraseña
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="password"
+                                            placeholder="Dejar en blanco para no cambiar"
+                                            id="pwd-input" autocomplete="new-password">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            onclick="togglePwd()">
+                                            <i class="fas fa-eye" id="pwd-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Palabra de Activación</label>
-                                <input type="text" class="form-control" name="wake_word" value="{{ config.wake_word }}"
-                                    required>
-                                <div class="form-text text-muted">Di esta palabra para activar el asistente (ej: "Neo",
-                                    "Kompai").</div>
-                            </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-microphone-alt me-1 text-muted"></i> Palabra de Activación
+                                    </label>
+                                    <input type="text" class="form-control" name="wake_word"
+                                        value="{{ config.wake_word }}" required>
+                                    <div class="form-text">
+                                        Palabra que activa el asistente por voz (ej: "Neo", "Helio").
+                                    </div>
+                                </div>
 
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i> Guardar Cambios
-                            </button>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-robot me-1 text-muted"></i> Nombre del Asistente
+                                    </label>
+                                    <input type="text" class="form-control" name="assistant_name"
+                                        value="{{ config.assistant_name or 'Neo' }}"
+                                        placeholder="Neo">
+                                    <div class="form-text">Nombre con el que el asistente se identifica.</div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-globe me-1 text-muted"></i> Idioma del Sistema
+                                    </label>
+                                    <select class="form-select" name="language">
+                                        <option value="es" {% if (config.language or 'es') == 'es' %}selected{% endif %}>
+                                            Español
+                                        </option>
+                                        <option value="en" {% if config.language == 'en' %}selected{% endif %}>
+                                            English
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-volume-up me-1 text-muted"></i> Volumen por Defecto
+                                    </label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="range" class="form-range flex-grow-1" name="default_volume"
+                                            min="0" max="100" step="5"
+                                            value="{{ config.default_volume or 80 }}"
+                                            oninput="this.nextElementSibling.textContent = this.value + '%'">
+                                        <span class="text-muted small" style="min-width:40px">
+                                            {{ config.default_volume or 80 }}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center
+                                                border border-secondary border-opacity-25 rounded p-3">
+                                        <div>
+                                            <strong class="d-block">Confirmación de voz al ejecutar</strong>
+                                            <small class="text-muted">
+                                                El asistente confirma en voz alta los comandos ejecutados.
+                                            </small>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="voice_confirm"
+                                                {% if config.voice_confirm %}checked{% endif %}>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                                    </button>
+                                </div>
+                            </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!-- PESTAÑA APARIENCIA (CSS Personalizado movido aquí) -->
+            <!-- ══════════════════════════════════════════
+                 APARIENCIA
+            ══════════════════════════════════════════ -->
             <div class="tab-pane fade" id="appearance" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-paint-brush me-2"></i> Apariencia y Personalización</h5>
+                        <h5 class="mb-0"><i class="fas fa-palette me-2 text-primary"></i>Apariencia y Personalización</h5>
                     </div>
                     <div class="card-body">
                         <form method="post">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <!-- Campos Requeridos Ocultos necesarios para publicar el formulario sin error si se reutiliza el mismo endpoint backend que los espera, 
-                                 PERO web_admin.py los maneja vía request.form.get por lo que si faltan podría estar bien o reiniciarlos.
-                                 Añadiremos campos ocultos para actualizaciones seguras si usamos el mismo endpoint. -->
                             <input type="hidden" name="username" value="{{ config.admin_user }}">
                             <input type="hidden" name="wake_word" value="{{ config.wake_word }}">
 
-                            <div class="mb-3">
-                                <label class="form-label">CSS Personalizado</label>
-                                <textarea class="form-control text-mono" name="custom_css" rows="10"
-                                    placeholder="/* Tu código CSS aquí */&#10;body { ... }">{{ config.custom_css }}</textarea>
-                                <div class="form-text">
-                                    Puedes inyectar CSS para modificar colores o disposicón. Se cargarà al final del
-                                    &lt;head&gt;.
+                            <!-- Color de acento -->
+                            <h6 class="text-muted text-uppercase small ls-1 mb-3">
+                                <i class="fas fa-circle-notch me-1"></i> Color de Acento
+                            </h6>
+                            <div class="d-flex gap-3 flex-wrap mb-4">
+                                {% set accents = [
+                                    ('#38bdf8', 'Sky (defecto)'),
+                                    ('#818cf8', 'Indigo'),
+                                    ('#4ade80', 'Esmeralda'),
+                                    ('#f472b6', 'Rosa'),
+                                    ('#fb923c', 'Naranja'),
+                                    ('#facc15', 'Ámbar'),
+                                    ('#a78bfa', 'Violeta'),
+                                    ('#34d399', 'Turquesa'),
+                                ] %}
+                                {% for color, name in accents %}
+                                <label class="accent-swatch" title="{{ name }}"
+                                    style="background:{{ color }};"
+                                    onclick="setAccent('{{ color }}')">
+                                </label>
+                                {% endfor %}
+                                <!-- Custom color -->
+                                <label class="accent-swatch d-flex align-items-center justify-content-center"
+                                    title="Color personalizado"
+                                    style="background: var(--primary); border: 2px dashed rgba(255,255,255,0.3);">
+                                    <input type="color" name="accent_color" id="accentColorPicker"
+                                        value="{{ config.accent_color or '#38bdf8' }}"
+                                        style="opacity:0; position:absolute; width:42px; height:42px; cursor:pointer;"
+                                        oninput="setAccent(this.value)">
+                                    <i class="fas fa-eye-dropper text-white" style="pointer-events:none;"></i>
+                                </label>
+                            </div>
+                            <input type="hidden" name="accent_color_value" id="accent_color_hidden"
+                                value="{{ config.accent_color or '#38bdf8' }}">
+
+                            <hr class="border-secondary opacity-25">
+
+                            <!-- Fondo -->
+                            <h6 class="text-muted text-uppercase small ls-1 mb-3">
+                                <i class="fas fa-image me-1"></i> Fondo de Pantalla
+                            </h6>
+                            <div class="row g-2 mb-4">
+                                {% for bg_name, bg_value in [
+                                    ('Gradiente Oscuro (defecto)', '#0b0f19'),
+                                    ('Azul Medianoche', 'linear-gradient(135deg,#0f0c29,#302b63,#24243e)'),
+                                    ('Verde Bosque', 'linear-gradient(135deg,#0a1628,#0d2b1f)'),
+                                    ('Rojo Volcánico', 'linear-gradient(135deg,#1a0a0a,#2d0f0f)'),
+                                ] %}
+                                <div class="col-6 col-md-3">
+                                    <div class="bg-swatch" style="background:{{ bg_value }};"
+                                        onclick="document.getElementById('bg_hidden').value='{{ bg_value }}'; this.parentElement.parentElement.querySelectorAll('.bg-swatch').forEach(el=>el.classList.remove('selected')); this.classList.add('selected');"
+                                        title="{{ bg_name }}">
+                                        <span class="small text-white-50">{{ bg_name }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="bg_value" id="bg_hidden" value="{{ config.bg_value or '' }}">
+
+                            <hr class="border-secondary opacity-25">
+
+                            <!-- CSS personalizado -->
+                            <h6 class="text-muted text-uppercase small ls-1 mb-3">
+                                <i class="fas fa-code me-1"></i> CSS Personalizado
+                            </h6>
+                            <textarea class="form-control font-monospace" name="custom_css" rows="8"
+                                placeholder="/* Tu código CSS aquí */&#10;:root { --primary: #38bdf8; }">{{ config.custom_css }}</textarea>
+                            <div class="form-text mb-3">
+                                Se inyecta en el <code>&lt;head&gt;</code> de todas las páginas.
+                                Úsalo para sobrescribir variables CSS o estilos globales.
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar Apariencia
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════
+                 IA
+            ══════════════════════════════════════════ -->
+            <div class="tab-pane fade" id="ai" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-brain me-2 text-primary"></i>Inteligencia Artificial</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="username" value="{{ config.admin_user }}">
+                            <input type="hidden" name="wake_word" value="{{ config.wake_word }}">
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-cube me-1 text-muted"></i> Modelo LLM (GGUF)
+                                    </label>
+                                    <select name="ai_model" class="form-select">
+                                        {% for model in models %}
+                                        <option value="{{ model }}"
+                                            {% if config.ai_model_path and model in config.ai_model_path %}selected{% endif %}>
+                                            {{ model }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Modelo de lenguaje local para generar respuestas.</div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-volume-up me-1 text-muted"></i> Voz del Sistema (TTS)
+                                    </label>
+                                    <select name="tts_model" class="form-select">
+                                        {% for voice in voices %}
+                                        <option value="{{ voice }}"
+                                            {% if config.tts and config.tts.piper_model and voice in config.tts.piper_model %}selected{% endif %}>
+                                            {{ voice }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Modelo de síntesis de voz (Piper TTS).</div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-sliders-h me-1 text-muted"></i> Temperatura del LLM
+                                    </label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="range" class="form-range flex-grow-1" name="llm_temperature"
+                                            min="0" max="2" step="0.1"
+                                            value="{{ config.llm_temperature or 0.7 }}"
+                                            oninput="this.nextElementSibling.textContent = this.value">
+                                        <span class="text-muted small" style="min-width:30px">
+                                            {{ config.llm_temperature or 0.7 }}
+                                        </span>
+                                    </div>
+                                    <div class="form-text">
+                                        0 = determinista y preciso, 2 = creativo e impredecible.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-list-ol me-1 text-muted"></i> Tokens Máximos
+                                    </label>
+                                    <input type="number" class="form-control" name="llm_max_tokens"
+                                        value="{{ config.llm_max_tokens or 512 }}" min="64" max="4096" step="64">
+                                    <div class="form-text">Longitud máxima de la respuesta generada.</div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center
+                                                border border-secondary border-opacity-25 rounded p-3">
+                                        <div>
+                                            <strong class="d-block">Modo rápido (Router ONNX)</strong>
+                                            <small class="text-muted">
+                                                Enruta comandos frecuentes sin pasar por el LLM para ahorrar tiempo.
+                                            </small>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="onnx_router_enabled"
+                                                {% if config.onnx_router_enabled != False %}checked{% endif %}>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Guardar Configuración IA
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════
+                 NOTIFICACIONES
+            ══════════════════════════════════════════ -->
+            <div class="tab-pane fade" id="notifications" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bell me-2 text-primary"></i>Notificaciones</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-4">
+                            Controla qué eventos generan notificaciones en la interfaz y por voz.
+                        </p>
+                        <div class="d-flex flex-column gap-3">
+                            {% for notif_id, notif_label, notif_desc in [
+                                ('notif_command_ok', 'Comando ejecutado', 'Confirmar en pantalla cada comando completado con éxito.'),
+                                ('notif_command_error', 'Errores de comando', 'Mostrar alerta cuando un comando falla.'),
+                                ('notif_model_load', 'Carga de modelos IA', 'Avisar cuando un modelo se carga o descarga de memoria.'),
+                                ('notif_wakeword', 'Palabra de activación', 'Notificar cuando se detecta la wake word.'),
+                                ('notif_mqtt_event', 'Eventos MQTT', 'Alertas de mensajes recibidos de agentes externos.'),
+                            ] %}
+                            <div class="d-flex justify-content-between align-items-center
+                                        border border-secondary border-opacity-25 rounded p-3">
+                                <div>
+                                    <strong class="d-block">{{ notif_label }}</strong>
+                                    <small class="text-muted">{{ notif_desc }}</small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox"
+                                        id="{{ notif_id }}"
+                                        {% if config.get(notif_id, True) %}checked{% endif %}
+                                        onchange="saveNotifPref('{{ notif_id }}', this.checked)">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-4 border-top border-secondary border-opacity-25 pt-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="testNotification()">
+                                <i class="fas fa-bell me-1"></i> Enviar notificación de prueba
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════
+                 SEGURIDAD
+            ══════════════════════════════════════════ -->
+            <div class="tab-pane fade" id="security" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-shield-alt me-2 text-primary"></i>Seguridad</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-column gap-3 mb-4">
+                            <div class="d-flex justify-content-between align-items-center
+                                        border border-secondary border-opacity-25 rounded p-3">
+                                <div>
+                                    <strong class="d-block">Protección CSRF</strong>
+                                    <small class="text-muted">
+                                        Protege los formularios contra ataques Cross-Site Request Forgery.
+                                    </small>
+                                </div>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Activo
+                                </span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center
+                                        border border-secondary border-opacity-25 rounded p-3">
+                                <div>
+                                    <strong class="d-block">Rate Limiting en API</strong>
+                                    <small class="text-muted">
+                                        Limita el número de peticiones para evitar abusos o ataques de fuerza bruta.
+                                    </small>
+                                </div>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Activo
+                                </span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center
+                                        border border-secondary border-opacity-25 rounded p-3">
+                                <div>
+                                    <strong class="d-block">Autenticación vocal (Voice Print)</strong>
+                                    <small class="text-muted">
+                                        Requiere verificación de huella de voz para comandos sensibles.
+                                    </small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="exp_voice_auth"
+                                        {% if config.experimental and config.experimental.voice_auth_enabled %}checked{% endif %}
+                                        onchange="toggleExperimental('voice_auth_enabled', this.checked)">
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i> Guardar CSS
+                            <div class="d-flex justify-content-between align-items-center
+                                        border border-secondary border-opacity-25 rounded p-3">
+                                <div>
+                                    <strong class="d-block">HTTPS / SSL</strong>
+                                    <small class="text-muted">
+                                        Encripta la comunicación entre el navegador y el servidor.
+                                    </small>
+                                </div>
+                                <span class="badge {% if config.ssl_enabled %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    <i class="fas {% if config.ssl_enabled %}fa-lock{% else %}fa-lock-open{% endif %} me-1"></i>
+                                    {% if config.ssl_enabled %}Activo{% else %}Desactivado{% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="border border-secondary border-opacity-25 rounded p-3">
+                            <h6 class="mb-3">
+                                <i class="fas fa-sign-out-alt me-2 text-warning"></i>Gestión de Sesiones
+                            </h6>
+                            <p class="text-muted small mb-3">
+                                Cierra todas las sesiones activas excepto la actual. Útil si accediste desde un dispositivo desconocido.
+                            </p>
+                            <button class="btn btn-outline-warning btn-sm" onclick="invalidateAllSessions()">
+                                <i class="fas fa-door-closed me-1"></i> Cerrar todas las sesiones
                             </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- PESTAÑA IA -->
-            <div class="tab-pane fade" id="ai" role="tabpanel">
-                <!-- ... Contenido de IA (omitido para ahorrar longitud generada, suponiendo que la lógica se preserve o el usuario pueda manejarla) ... -->
-                <!-- Idealmente debería preservar el contenido existente, pero para este uso específico de la herramienta estoy reemplazando un bloque. -->
-                <!-- Reinyectando el contenido estándar de la pestaña IA para completitud y evitar eliminación -->
+            <!-- ══════════════════════════════════════════
+                 AVANZADO
+            ══════════════════════════════════════════ -->
+            <div class="tab-pane fade" id="advanced" role="tabpanel">
                 <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Configuración de IA</h5>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-code me-2 text-primary"></i>Editor de Configuración (JSON)
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="formatJson()">
+                                <i class="fas fa-indent me-1"></i>Formatear
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="saveConfig()">
+                                <i class="fas fa-save me-1"></i>Guardar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="alert alert-warning m-3 mb-0 d-flex gap-2">
+                            <i class="fas fa-exclamation-triangle flex-shrink-0 mt-1"></i>
+                            <small>Edita el JSON directamente solo si sabes lo que haces. Un error de sintaxis
+                            puede dejar el sistema inoperativo.</small>
+                        </div>
+                        <textarea id="json-editor" class="form-control bg-dark text-success font-monospace border-0 p-3"
+                            style="height: 480px; border-radius: 0 0 1rem 1rem;">{{ config | tojson(indent=4) }}</textarea>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bookmark me-2 text-primary"></i>Accesos Directos a Documentación
+                        </h5>
+                        <button class="btn btn-sm btn-success" onclick="saveDocsConfig()">
+                            <i class="fas fa-save me-1"></i>Guardar
+                        </button>
                     </div>
                     <div class="card-body">
-                        <form method="post">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="username" value="{{ config.admin_user }}">
-                            <input type="hidden" name="wake_word" value="{{ config.wake_word }}">
-
-                            <div class="mb-4">
-                                <label class="form-label">Modelo LLM (GGUF)</label>
-                                <select name="ai_model" class="form-select">
-                                    {% for model in models %}
-                                    <option value="{{ model }}" {% if config.ai_model_path and model in
-                                        config.ai_model_path %}selected{% endif %}>
-                                        {{ model }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="mb-4">
-                                <label class="form-label">Voz del Sistema (TTS)</label>
-                                <select name="tts_model" class="form-select">
-                                    {% for voice in voices %}
-                                    <option value="{{ voice }}" {% if config.tts and config.tts.piper_model and voice in
-                                        config.tts.piper_model %}selected{% endif %}>
-                                        {{ voice }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i> Guardar Selección de IA
-                            </button>
-                        </form>
+                        <p class="text-muted small">
+                            Define rutas a manuales, logs y archivos RAG que quieres consultar rápidamente por voz.
+                            Formato: <code>{ "manuals": { "nombre": "ruta" } }</code>
+                        </p>
+                        <textarea id="docs-editor" class="form-control bg-dark text-info font-monospace border-0 p-3"
+                            style="height: 240px;"></textarea>
                     </div>
                 </div>
             </div>
 
-            <!-- PESTAÑA ACERCA DE -->
+            <!-- ══════════════════════════════════════════
+                 INFORMACIÓN
+            ══════════════════════════════════════════ -->
             <div class="tab-pane fade" id="about" role="tabpanel">
-                <div class="card border-info border-opacity-25">
-                    <div class="card-header bg-info bg-opacity-10">
-                        <h5 class="mb-0 text-info"><i class="fas fa-info-circle me-2"></i> Acerca del Sistema</h5>
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Acerca del Sistema
+                        </h5>
+                        <button class="btn btn-outline-primary btn-sm" onclick="checkForUpdates()">
+                            <i class="fas fa-sync-alt me-1"></i>Buscar Actualizaciones
+                        </button>
                     </div>
                     <div class="card-body">
                         {% if sys_info %}
                         <div class="row g-4">
                             <div class="col-md-6">
-                                <h6 class="text-muted text-uppercase small ls-1">Aplicación</h6>
-                                <ul class="list-unstyled mt-2">
-                                    <li><strong>Nombre:</strong> {{ sys_info.app.name }}</li>
-                                    <li><strong>Versión:</strong> <span class="badge bg-primary">{{ sys_info.app.version
-                                            }}</span></li>
-                                    <li><strong>Tipo:</strong> {{ sys_info.app.type }}</li>
-                                    <li><strong>Commit:</strong> <span class="text-mono">{{ sys_info.app.commit
-                                            }}</span></li>
-                                </ul>
+                                <h6 class="text-muted text-uppercase small mb-3">
+                                    <i class="fas fa-cube me-1"></i> Aplicación
+                                </h6>
+                                <table class="table table-sm">
+                                    <tr><td class="text-muted">Nombre</td><td>{{ sys_info.app.name }}</td></tr>
+                                    <tr><td class="text-muted">Versión</td>
+                                        <td><span class="badge bg-primary">{{ sys_info.app.version }}</span></td></tr>
+                                    <tr><td class="text-muted">Tipo</td><td>{{ sys_info.app.type }}</td></tr>
+                                    <tr><td class="text-muted">Rama</td>
+                                        <td><span class="badge bg-info text-dark">{{ sys_info.app.branch }}</span></td></tr>
+                                    <tr><td class="text-muted">Commit</td>
+                                        <td><code class="small">{{ sys_info.app.commit }}</code></td></tr>
+                                </table>
                             </div>
                             <div class="col-md-6">
-                                <h6 class="text-muted text-uppercase small ls-1">Sistema Operativo</h6>
-                                <ul class="list-unstyled mt-2">
-                                    <li><strong>Sistema:</strong> {{ sys_info.os.system }} {{ sys_info.os.release }}
-                                    </li>
-                                    <li><strong>Kernel:</strong> {{ sys_info.os.version }}</li>
-                                    <li><strong>Arquitectura:</strong> {{ sys_info.os.architecture }}</li>
-                                    <li><strong>Procesador:</strong> {{ sys_info.os.processor }}</li>
-                                </ul>
-                            </div>
-                            <div class="col-12">
-                                <hr class="border-secondary opacity-25">
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted text-uppercase small ls-1">Entorno Python</h6>
-                                <ul class="list-unstyled mt-2">
-                                    <li><strong>Python:</strong> {{ sys_info.python.version }}</li>
-                                    <li><strong>Implementación:</strong> {{ sys_info.python.implementation }}</li>
-                                    <li><strong>Compilador:</strong> {{ sys_info.python.compiler }}</li>
-                                </ul>
+                                <h6 class="text-muted text-uppercase small mb-3">
+                                    <i class="fas fa-server me-1"></i> Sistema Operativo
+                                </h6>
+                                <table class="table table-sm">
+                                    <tr><td class="text-muted">SO</td>
+                                        <td>{{ sys_info.os.system }} {{ sys_info.os.release }}</td></tr>
+                                    <tr><td class="text-muted">Kernel</td><td>{{ sys_info.os.version }}</td></tr>
+                                    <tr><td class="text-muted">Arquitectura</td>
+                                        <td>{{ sys_info.os.architecture }}</td></tr>
+                                    <tr><td class="text-muted">Procesador</td>
+                                        <td>{{ sys_info.os.processor }}</td></tr>
+                                </table>
                             </div>
                             <div class="col-md-6">
-                                <h6 class="text-muted text-uppercase small ls-1">Librerías Clave</h6>
-                                <ul class="list-unstyled mt-2">
+                                <h6 class="text-muted text-uppercase small mb-3">
+                                    <i class="fab fa-python me-1"></i> Python
+                                </h6>
+                                <table class="table table-sm">
+                                    <tr><td class="text-muted">Versión</td><td>{{ sys_info.python.version }}</td></tr>
+                                    <tr><td class="text-muted">Implementación</td>
+                                        <td>{{ sys_info.python.implementation }}</td></tr>
+                                    <tr><td class="text-muted">Compilador</td>
+                                        <td>{{ sys_info.python.compiler }}</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted text-uppercase small mb-3">
+                                    <i class="fas fa-puzzle-piece me-1"></i> Librerías Clave
+                                </h6>
+                                <table class="table table-sm">
                                     {% for lib, ver in sys_info.libraries.items() %}
-                                    <li class="d-flex justify-content-between" style="max-width: 250px;">
-                                        <span>{{ lib|capitalize }}:</span>
-                                        <span class="text-mono text-muted">{{ ver }}</span>
-                                    </li>
+                                    <tr>
+                                        <td class="text-muted">{{ lib|capitalize }}</td>
+                                        <td><code class="small">{{ ver }}</code></td>
+                                    </tr>
                                     {% endfor %}
-                                    <li class="d-flex justify-content-between border-top pt-2 mt-2"
-                                        style="max-width: 250px;">
-                                        <strong>Rama/Branch:</strong>
-                                        <span class="text-mono text-primary fw-bold">{{ sys_info.app.branch }}</span>
-                                    </li>
-                                </ul>
+                                </table>
                             </div>
                         </div>
                         {% else %}
-                        <p class="text-muted">Información no disponible.</p>
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
+                            <p>Información del sistema no disponible.</p>
+                        </div>
                         {% endif %}
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mt-4 border-top border-secondary border-opacity-25 pt-3 text-end">
-                            <button class="btn btn-outline-primary btn-sm" onclick="checkForUpdates()">
-                                <i class="fas fa-sync-alt me-2"></i> Buscar Actualizaciones
+            <!-- ══════════════════════════════════════════
+                 ZONA DE PELIGRO
+            ══════════════════════════════════════════ -->
+            <div class="tab-pane fade" id="danger" role="tabpanel">
+                <div class="card border-danger border-opacity-50">
+                    <div class="card-header bg-danger bg-opacity-10 border-danger border-opacity-25">
+                        <h5 class="mb-0 text-danger">
+                            <i class="fas fa-radiation-alt me-2"></i>Zona de Peligro
+                        </h5>
+                    </div>
+                    <div class="card-body d-flex flex-column gap-4">
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong class="d-block">
+                                    <i class="fas fa-sync-alt me-2 text-warning"></i>Reiniciar Servicio NeoCore
+                                </strong>
+                                <small class="text-muted">
+                                    Recarga la configuración sin apagar el dispositivo. Los cambios se aplican inmediatamente.
+                                </small>
+                            </div>
+                            <button onclick="restartService()" class="btn btn-warning btn-sm ms-3 flex-shrink-0">
+                                <i class="fas fa-redo me-1"></i>Reiniciar
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- PESTAÑA AVANZADO -->
-            <div class="tab-pane fade" id="advanced" role="tabpanel">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Editor de Configuración (Raw JSON)</h5>
-                        <button class="btn btn-sm btn-success" onclick="saveConfig()">
-                            <i class="fas fa-save"></i> Guardar JSON
-                        </button>
-                    </div>
-                    <div class="card-body p-0">
-                        <textarea id="json-editor" class="form-control bg-dark text-success text-mono border-0 p-3"
-                            style="height: 500px; font-family: monospace;">{{ config | tojson(indent=4) }}</textarea>
-                    </div>
-                </div>
-            </div>
+                        <hr class="border-danger border-opacity-25 my-0">
 
-            <!-- PESTAÑA DOCS -->
-            <div class="tab-pane fade" id="docs" role="tabpanel">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Accesos Directos a Documentación</h5>
-                        <button class="btn btn-sm btn-success" onclick="saveDocsConfig()">
-                            <i class="fas fa-save"></i> Guardar Shortcuts
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            Define aquí los manuales, logs y archivos RAG que quieres buscar rápidamente.
-                            <br>
-                            Uso: "manuals": { "nombre": "ruta" } <br>
-                            Comando: "busca el manual de nombre"
-                        </div>
-                        <textarea id="docs-editor" class="form-control bg-dark text-info text-mono border-0 p-3"
-                            style="height: 400px; font-family: monospace;"></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PESTAÑA EXPERIMENTAL -->
-            <div class="tab-pane fade" id="experimental" role="tabpanel">
-                <div class="card border-warning">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0"><i class="fas fa-flask"></i> Funciones Experimentales (Alpha)</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-warning">
-                            <strong><i class="fas fa-exclamation-circle"></i> Advertencia:</strong> Estas funciones
-                            están en desarrollo. Úsalas con precaución.
-                        </div>
-
-                        <h6 class="border-bottom pb-2 mb-3">Autenticación Biométrica Multinodal</h6>
-
-                        <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-0">Huella de Voz (Voice Print)</h6>
-                                <small class="text-muted">Requerir verificación de voz para comandos sensibles.</small>
+                                <strong class="d-block">
+                                    <i class="fas fa-power-off me-2 text-danger"></i>Reiniciar Sistema Completo
+                                </strong>
+                                <small class="text-muted">
+                                    Reinicia el dispositivo físico o la máquina virtual donde corre WatermelonD.
+                                </small>
                             </div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="exp_voice_auth" {% if
-                                    config.experimental and config.experimental.voice_auth_enabled %}checked{% endif %}
-                                    onchange="toggleExperimental('voice_auth_enabled', this.checked)">
-                            </div>
+                            <button onclick="restartSystem()" class="btn btn-danger btn-sm ms-3 flex-shrink-0">
+                                <i class="fas fa-power-off me-1"></i>Reiniciar
+                            </button>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center mb-4 op-50" style="opacity: 0.5;">
+                        <hr class="border-danger border-opacity-25 my-0">
+
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-0">Reconocimiento Facial (Anti-Spoofing)</h6>
-                                <small class="text-muted">Verificar presencia visual del usuario autorizado.
-                                    (Próximamente)</small>
+                                <strong class="d-block">
+                                    <i class="fas fa-eraser me-2 text-danger"></i>Restablecer Configuración
+                                </strong>
+                                <small class="text-muted">
+                                    Borra toda la configuración y vuelve a los valores de fábrica. Irreversible.
+                                </small>
                             </div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" disabled>
-                            </div>
+                            <button onclick="factoryReset()" class="btn btn-outline-danger btn-sm ms-3 flex-shrink-0">
+                                <i class="fas fa-eraser me-1"></i>Restablecer
+                            </button>
                         </div>
 
                     </div>
                 </div>
             </div>
 
-            <!-- PESTAÑA PELIGRO -->
-            <div class="tab-pane fade" id="danger" role="tabpanel">
-                <div class="card border-danger">
-                    <div class="card-header bg-danger text-white">
-                        <h5 class="mb-0">Zona de Peligro</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Reiniciar el sistema aplicará todos los cambios y reiniciará el dispositivo físico o el
-                            servicio.</p>
-                        <button onclick="restartSystem()" class="btn btn-danger">
-                            <i class="fas fa-power-off me-2"></i> Reiniciar Sistema
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        </div><!-- /tab-content -->
     </div>
-    {% endblock %}
+</div>
 
-    {% block scripts %}
-    <script>
-        // Cargar Docs de Usuario al Inicio
-        document.addEventListener('DOMContentLoaded', function () {
-            fetch('/api/settings/user_docs')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('docs-editor').value = JSON.stringify(data, null, 4);
-                });
-        });
+<style>
+    .settings-nav .list-group-item {
+        background: transparent;
+        border-color: rgba(255,255,255,0.06);
+        color: var(--text-muted);
+        transition: all 0.18s;
+        border-radius: 0.5rem !important;
+        margin-bottom: 2px;
+    }
+    .settings-nav .list-group-item:hover { background: var(--bg-hover); color: var(--text-main);}
+    .settings-nav .list-group-item.active {
+        background: linear-gradient(90deg, var(--bg-hover), transparent);
+        border-left: 3px solid var(--primary);
+        color: var(--primary);
+    }
 
-        function saveDocsConfig() {
-            const content = document.getElementById('docs-editor').value;
-            try {
-                const json = JSON.parse(content);
-                fetch('/api/settings/user_docs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(json)
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            window.notify("Guardado", "Shortcuts actualizados.", "success");
-                        } else {
-                            window.notify("Error", data.message, "danger");
-                        }
-                    });
-            } catch (e) {
-                window.notify("JSON Inválido", e, "danger");
-            }
-        }
+    .accent-swatch {
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 3px solid transparent;
+        transition: border-color 0.2s, transform 0.2s;
+        display: inline-block;
+        position: relative;
+    }
+    .accent-swatch:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.4); }
+    .accent-swatch.active { border-color: white; box-shadow: 0 0 0 2px var(--primary); }
 
-        function restartSystem() {
-            if (confirm("¿Estás seguro de que quieres reiniciar el sistema?")) {
-                // Show overlay immediately
-                document.getElementById('connection-overlay').classList.remove('d-none');
+    .bg-swatch {
+        height: 72px;
+        border-radius: 0.75rem;
+        border: 2px solid transparent;
+        cursor: pointer;
+        display: flex;
+        align-items: flex-end;
+        padding: 6px 8px;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+    .bg-swatch:hover { transform: scale(1.03); }
+    .bg-swatch.selected { border-color: var(--primary); }
 
-                fetch('/api/restart', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        window.notify("Reiniciando", data.message, "warning");
-                    })
-                    .catch(error => {
-                        document.getElementById('connection-overlay').classList.add('d-none');
-                        window.notify("Error", "Error al intentar reiniciar.", "danger");
-                    });
-            }
-        }
+    .table td { border-color: rgba(255,255,255,0.05); vertical-align: middle; padding: 0.5rem; }
+    .table td:first-child { width: 40%; font-size: 0.875rem; }
+</style>
+{% endblock %}
 
-        function saveConfig() {
-            const content = document.getElementById('json-editor').value;
-            try {
-                const json = JSON.parse(content); // Validar JSON
-                fetch('/api/config/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(json)
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            window.notify("Guardado", "Configuración guardada. Reinicia para aplicar.", "success");
-                        } else {
-                            window.notify("Error", 'Error guardando: ' + data.message, "danger");
-                        }
-                    });
-            } catch (e) {
-                window.notify("JSON Inválido", 'Error en sintaxis JSON: ' + e, "danger");
-            }
-        }
-        function toggleExperimental(feature, enabled) {
-            fetch('/api/config/experimental', {
+{% block scripts %}
+<script>
+    /* ── Docs ──────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/settings/user_docs')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('docs-editor').value = JSON.stringify(data, null, 4);
+            })
+            .catch(() => {});
+    });
+
+    function saveDocsConfig() {
+        const content = document.getElementById('docs-editor').value;
+        try {
+            const json = JSON.parse(content);
+            fetch('/api/settings/user_docs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ feature: feature, enabled: enabled })
+                body: JSON.stringify(json)
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log(feature + " updated to " + enabled);
-                        window.notify("Configuración Actualizada", "Función experimental modificada.", "info");
-                    } else {
-                        window.notify("Error", "Error actualizando configuración.", "danger");
-                        // Revertir el checkbox si falló
-                        document.getElementById('exp_voice_auth').checked = !enabled;
-                    }
-                });
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') window.notify('Guardado', 'Shortcuts actualizados.', 'success');
+                else window.notify('Error', data.message, 'danger');
+            });
+        } catch (e) {
+            window.notify('JSON Inválido', e.message, 'danger');
         }
+    }
 
-        function checkForUpdates() {
-            window.notify("Buscando Actualizaciones", "Conectando con repositorio central...", "info");
+    /* ── Config JSON ───────────────────────────────── */
+    function formatJson() {
+        const el = document.getElementById('json-editor');
+        try {
+            el.value = JSON.stringify(JSON.parse(el.value), null, 4);
+        } catch (e) { window.notify('JSON Inválido', e.message, 'danger'); }
+    }
 
-            fetch('/api/update/check')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        window.notify("Error", "Fallo al buscar actualizaciones: " + data.error, "danger");
-                        return;
-                    }
-
-                    if (data.has_updates) {
-                        if (confirm(`¡Actualización Disponible!\n\nRama: ${data.branch}\nLocal: ${data.local_hash}\nRemoto: ${data.remote_hash}\n\n¿Quieres actualizar ahora?`)) {
-                            performUpdate();
-                        }
-                    } else {
-                        window.notify("Sistema Actualizado", `Estás en la última versión de la rama '${data.branch}'.`, "success");
-                    }
-                })
-                .catch(err => {
-                    window.notify("Error de Red", "No se pudo conectar con el servidor.", "danger");
-                });
+    function saveConfig() {
+        const content = document.getElementById('json-editor').value;
+        try {
+            const json = JSON.parse(content);
+            fetch('/api/config/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(json)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) window.notify('Guardado', 'Configuración guardada. Reinicia para aplicar.', 'success');
+                else window.notify('Error', 'Error: ' + data.message, 'danger');
+            });
+        } catch (e) {
+            window.notify('JSON Inválido', 'Error de sintaxis: ' + e.message, 'danger');
         }
+    }
 
-        function performUpdate() {
-            window.notify("Actualizando", "Descargando cambios y reiniciando...", "warning");
-            fetch('/api/update', { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        window.notify("Éxito", "Actualización completada. Reiniciando interface...", "success");
-                        setTimeout(() => location.reload(), 5000);
-                    } else {
-                        window.notify("Error", data.message, "danger");
-                    }
-                });
-        }
-    </script>
-    {% endblock %}
+    /* ── Danger zone ───────────────────────────────── */
+    function restartSystem() {
+        if (!confirm('¿Reiniciar el sistema completo? El dispositivo se apagará y arrancará de nuevo.')) return;
+        document.getElementById('connection-overlay').classList.remove('d-none');
+        fetch('/api/restart', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => window.notify('Reiniciando', data.message, 'warning'))
+            .catch(() => {
+                document.getElementById('connection-overlay').classList.add('d-none');
+                window.notify('Error', 'No se pudo reiniciar.', 'danger');
+            });
+    }
+
+    function restartService() {
+        if (!confirm('¿Reiniciar el servicio NeoCore?')) return;
+        fetch('/api/service/restart', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) window.notify('Servicio reiniciado', data.message || 'NeoCore se ha reiniciado.', 'success');
+                else window.notify('Error', data.message, 'danger');
+            })
+            .catch(() => window.notify('Error', 'No se pudo contactar con el servidor.', 'danger'));
+    }
+
+    function factoryReset() {
+        const code = prompt('Esta acción es IRREVERSIBLE.\nEscribe CONFIRMAR para continuar:');
+        if (code !== 'CONFIRMAR') return;
+        fetch('/api/config/reset', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    window.notify('Restablecido', 'Configuración de fábrica restaurada. Recargando...', 'warning');
+                    setTimeout(() => location.reload(), 3000);
+                } else {
+                    window.notify('Error', data.message, 'danger');
+                }
+            });
+    }
+
+    /* ── Seguridad / sesiones ──────────────────────── */
+    function invalidateAllSessions() {
+        if (!confirm('¿Cerrar todas las sesiones activas excepto la actual?')) return;
+        fetch('/api/auth/invalidate_sessions', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                window.notify('Sesiones cerradas', data.message || 'Todas las sesiones han sido cerradas.', 'success');
+            });
+    }
+
+    /* ── Experimental ──────────────────────────────── */
+    function toggleExperimental(feature, enabled) {
+        fetch('/api/config/experimental', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feature, enabled })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) window.notify('Actualizado', 'Función experimental modificada.', 'info');
+            else {
+                window.notify('Error', 'No se pudo actualizar.', 'danger');
+                document.getElementById('exp_voice_auth').checked = !enabled;
+            }
+        });
+    }
+
+    /* ── Actualizaciones ───────────────────────────── */
+    function checkForUpdates() {
+        window.notify('Buscando', 'Conectando con el repositorio...', 'info');
+        fetch('/api/update/check')
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) { window.notify('Error', data.error, 'danger'); return; }
+                if (data.has_updates) {
+                    if (confirm(`¡Actualización disponible!\n\nRama: ${data.branch}\nActual: ${data.local_hash}\nRemoto: ${data.remote_hash}\n\n¿Actualizar ahora?`))
+                        performUpdate();
+                } else {
+                    window.notify('Al día', `Versión actual es la más reciente (${data.branch}).`, 'success');
+                }
+            })
+            .catch(() => window.notify('Error de red', 'No se pudo contactar el servidor.', 'danger'));
+    }
+
+    function performUpdate() {
+        window.notify('Actualizando', 'Descargando cambios...', 'warning');
+        fetch('/api/update', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    window.notify('Completado', 'Actualización completada. Recargando...', 'success');
+                    setTimeout(() => location.reload(), 5000);
+                } else {
+                    window.notify('Error', data.message, 'danger');
+                }
+            });
+    }
+
+    /* ── Notificaciones ────────────────────────────── */
+    function saveNotifPref(key, value) {
+        fetch('/api/config/set', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, value })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) window.notify('Error', data.message, 'danger');
+        });
+    }
+
+    function testNotification() {
+        window.notify('Prueba de notificación', 'Las notificaciones están funcionando correctamente.', 'info');
+    }
+
+    /* ── Contraseña visible ────────────────────────── */
+    function togglePwd() {
+        const input = document.getElementById('pwd-input');
+        const eye   = document.getElementById('pwd-eye');
+        const isText = input.type === 'text';
+        input.type   = isText ? 'password' : 'text';
+        eye.className = isText ? 'fas fa-eye' : 'fas fa-eye-slash';
+    }
+
+    /* ── Color acento ──────────────────────────────── */
+    function setAccent(color) {
+        document.documentElement.style.setProperty('--primary', color);
+        document.getElementById('accent_color_hidden').value = color;
+        document.getElementById('accentColorPicker').value = color;
+        // Preview live
+        window.notify('Vista previa', 'El color se aplicará al guardar.', 'info');
+    }
+</script>
+{% endblock %}
