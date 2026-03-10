@@ -96,9 +96,26 @@
             </div>
         </div>
     </div>
+
+    <!-- Docker / Podman Containers -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 hover-card docker-btn" onclick="loadDockerContainers()" id="docker-card"
+            style="cursor: pointer; border-color: #0db7ed !important; border-width: 1px; border-style: solid; border-opacity: .25;">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-circle p-3 me-3" style="background-color: rgba(13, 183, 237, 0.12);">
+                    <i class="fab fa-docker fa-lg" style="color: #0db7ed;"></i>
+                </div>
+                <div>
+                    <h6 class="card-subtitle mb-1 text-muted">Contenedores</h6>
+                    <h5 class="card-title mb-0">Ver Docker / Podman</h5>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card h-100">
+<!-- Panel de salida genérico (texto) -->
+<div class="card h-100" id="action-output-card">
     <div class="card-header">
         <h5 class="mb-0"><i class="fas fa-terminal me-2"></i> Salida de Acción</h5>
     </div>
@@ -110,19 +127,107 @@
     </div>
 </div>
 
+<!-- Panel Docker (oculto por defecto) -->
+<div class="card mt-4" id="docker-panel" style="display:none;">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="mb-0">
+            <i class="fab fa-docker me-2" style="color:#0db7ed;"></i>
+            Contenedores — <span id="docker-engine-badge" class="badge ms-1" style="background:#0db7ed; font-size:0.7rem;"></span>
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary" id="docker-count-badge">0 contenedores</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="loadDockerContainers()">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="closeDockerPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <!-- Loading spinner -->
+        <div id="docker-loading" class="text-center py-5" style="display:none;">
+            <div class="spinner-border" style="color:#0db7ed;" role="status"></div>
+            <div class="mt-2 text-muted small">Consultando contenedores...</div>
+        </div>
+        <!-- Error message -->
+        <div id="docker-error" class="alert alert-danger m-3" style="display:none;"></div>
+        <!-- Table -->
+        <div id="docker-table-wrapper" class="table-responsive" style="display:none;">
+            <table class="table table-dark table-hover align-middle mb-0" id="docker-table">
+                <thead style="position: sticky; top: 0; background: #1a1a2e; z-index: 1;">
+                    <tr>
+                        <th style="width:100px;">ID</th>
+                        <th>Nombre</th>
+                        <th>Imagen</th>
+                        <th style="width:120px;">Estado</th>
+                        <th>Puertos</th>
+                        <th style="width:110px;">Activo desde</th>
+                    </tr>
+                </thead>
+                <tbody id="docker-tbody"></tbody>
+            </table>
+            <div id="docker-empty" class="text-center py-5 text-muted" style="display:none;">
+                <i class="fab fa-docker fa-3x mb-3 opacity-25"></i>
+                <p>No hay contenedores en el sistema.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .hover-card:hover {
         background-color: rgba(255, 255, 255, 0.05);
         transform: translateY(-2px);
         transition: all 0.2s;
     }
+    .docker-btn:hover {
+        border-color: #0db7ed !important;
+        box-shadow: 0 0 12px rgba(13, 183, 237, 0.25);
+    }
+    /* Estado badges */
+    .state-running  { color: #22c55e; }
+    .state-exited   { color: #ef4444; }
+    .state-paused   { color: #f59e0b; }
+    .state-unknown  { color: #9ca3af; }
+
+    #docker-panel {
+        border-color: rgba(13, 183, 237, 0.3) !important;
+    }
+    #docker-panel .card-header {
+        background: rgba(13, 183, 237, 0.06);
+        border-bottom-color: rgba(13, 183, 237, 0.2);
+    }
+    #docker-table td, #docker-table th {
+        padding: 0.65rem 1rem;
+        font-size: 0.85rem;
+    }
+    #docker-table tbody tr:hover {
+        background-color: rgba(13, 183, 237, 0.06) !important;
+    }
+    .container-name {
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
+    }
+    .container-image {
+        color: #94a3b8;
+        font-size: 0.8rem;
+        font-family: 'Courier New', monospace;
+    }
+    .container-ports {
+        color: #60a5fa;
+        font-size: 0.78rem;
+        font-family: 'Courier New', monospace;
+    }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    /* ── Generic action runner ───────────────────────────── */
     function runAction(id) {
         const output = document.getElementById('action-output');
+        showOutputCard();
         output.innerHTML = `<span class="text-info">Ejecutando acción: ${id}...\nPor favor espere...</span>`;
 
         fetch('/api/actions', {
@@ -131,9 +236,7 @@
             body: JSON.stringify({ id: id })
         })
             .then(res => res.json())
-            .then(data => {
-                output.innerText = data.output;
-            })
+            .then(data => { output.innerText = data.output; })
             .catch(err => {
                 output.innerHTML = `<span class="text-danger">Error: ${err}</span>`;
             });
@@ -141,6 +244,7 @@
 
     function runUpdate() {
         const output = document.getElementById('action-output');
+        showOutputCard();
         output.innerHTML = `<span class="text-info">Buscando actualizaciones de WatermelonD (Git Pull)...\nEsto reiniciará el servicio si hay cambios.</span>`;
 
         fetch('/api/update', {
@@ -148,12 +252,103 @@
             headers: { 'Content-Type': 'application/json' }
         })
             .then(res => res.json())
-            .then(data => {
-                output.innerText = data.message;
-            })
+            .then(data => { output.innerText = data.message; })
             .catch(err => {
                 output.innerHTML = `<span class="text-danger">Error: ${err}</span>`;
             });
+    }
+
+    /* ── Docker panel helpers ────────────────────────────── */
+    function showOutputCard() {
+        document.getElementById('action-output-card').style.display = '';
+        document.getElementById('docker-panel').style.display = 'none';
+    }
+
+    function closeDockerPanel() {
+        document.getElementById('docker-panel').style.display = 'none';
+        document.getElementById('action-output-card').style.display = '';
+    }
+
+    function stateIcon(state) {
+        const icons = {
+            running: '<i class="fas fa-circle state-running" title="Corriendo"></i>',
+            exited:  '<i class="fas fa-circle state-exited"  title="Detenido"></i>',
+            paused:  '<i class="fas fa-circle state-paused"  title="Pausado"></i>',
+            unknown: '<i class="fas fa-circle state-unknown" title="Desconocido"></i>',
+        };
+        return icons[state] || icons.unknown;
+    }
+
+    function loadDockerContainers() {
+        // Ocultar el panel de salida de texto y mostrar el de docker
+        document.getElementById('action-output-card').style.display = 'none';
+        const panel   = document.getElementById('docker-panel');
+        const loading = document.getElementById('docker-loading');
+        const errBox  = document.getElementById('docker-error');
+        const wrapper = document.getElementById('docker-table-wrapper');
+        const empty   = document.getElementById('docker-empty');
+        const tbody   = document.getElementById('docker-tbody');
+
+        panel.style.display   = '';
+        loading.style.display = '';
+        errBox.style.display  = 'none';
+        wrapper.style.display = 'none';
+
+        fetch('/api/docker/ps')
+            .then(res => res.json())
+            .then(data => {
+                loading.style.display = 'none';
+
+                if (!data.success) {
+                    errBox.textContent   = data.message || 'Error desconocido';
+                    errBox.style.display = '';
+                    return;
+                }
+
+                // Badge del motor
+                const engineBadge = document.getElementById('docker-engine-badge');
+                engineBadge.textContent = data.engine === 'podman' ? '🦭 Podman' : '🐳 Docker';
+
+                // Badge de cantidad
+                document.getElementById('docker-count-badge').textContent =
+                    `${data.count} contenedor${data.count !== 1 ? 'es' : ''}`;
+
+                wrapper.style.display = '';
+
+                if (data.count === 0) {
+                    empty.style.display = '';
+                    tbody.innerHTML     = '';
+                    return;
+                }
+
+                empty.style.display = 'none';
+                tbody.innerHTML = data.containers.map(c => `
+                    <tr>
+                        <td><code class="text-secondary small">${escHtml(c.id)}</code></td>
+                        <td><span class="container-name">${escHtml(c.name)}</span></td>
+                        <td><span class="container-image">${escHtml(c.image)}</span></td>
+                        <td>
+                            ${stateIcon(c.state)}
+                            <span class="ms-1 small">${escHtml(c.status)}</span>
+                        </td>
+                        <td><span class="container-ports">${escHtml(c.ports)}</span></td>
+                        <td class="text-muted small">${escHtml(c.running_for)}</td>
+                    </tr>
+                `).join('');
+            })
+            .catch(err => {
+                loading.style.display = 'none';
+                errBox.textContent    = `Error de red: ${err}`;
+                errBox.style.display  = '';
+            });
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 </script>
 {% endblock %}
